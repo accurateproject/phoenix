@@ -1,0 +1,11 @@
+*~
+*.pyc
+*.pyo
+*.bak
+cache/*
+databases/*
+sessions/*
+errors/*
+.DS_Store
+*.sublime*
+progress.log
