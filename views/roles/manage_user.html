@@ -1,0 +1,10 @@
+{{extend 'layout.html'}}
+
+<dl class="dl-horizontal">
+  <dt>{{=T('User')}}</dt>
+  <dd>{{=user.first_name + ' ' + user.last_name}}</dd>
+  <dt>{{=T('Groups')}}</dt>
+  <dd>{{=groups[user.id]}}</dd>
+  <dt>{{=T('Disabled')}}</dt>
+  <dd>{{=user.registration_key in ('disabled', 'blocked')}}</dd>
+</dl>

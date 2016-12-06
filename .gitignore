@@ -2,10 +2,12 @@
 *.pyc
 *.pyo
 *.bak
-cache/*
-databases/*
-sessions/*
-errors/*
+cache
+databases
+sessions
+private
+errors
 .DS_Store
 *.sublime*
 progress.log
+/.pythonhistory

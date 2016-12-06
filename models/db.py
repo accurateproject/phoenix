@@ -31,7 +31,10 @@ if not request.env.web2py_runtime_gae:
     db = DAL(myconf.get('db.uri'),
              pool_size=myconf.get('db.pool_size'),
              migrate_enabled=myconf.get('db.migrate'),
-             check_reserved=['all'])
+             check_reserved=['all'],
+             lazy_tables=True
+    )
+    session.connect(request, response, cookie_key=myconf.get('app.cookie_key'), compression_level=9)
 else:
     # ---------------------------------------------------------------------
     # connect to Google BigTable (optional 'google:datastore://namespace')
@@ -90,7 +93,7 @@ plugins = PluginManager()
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
 # -------------------------------------------------------------------------
-auth.define_tables(username=False, signature=False)
+auth.define_tables(username=False, signature=True)
 
 # -------------------------------------------------------------------------
 # configure email
@@ -106,8 +109,13 @@ mail.settings.ssl = myconf.get('smtp.ssl') or False
 # configure auth policy
 # -------------------------------------------------------------------------
 auth.settings.registration_requires_verification = False
-auth.settings.registration_requires_approval = False
+auth.settings.registration_requires_approval = True
 auth.settings.reset_password_requires_verification = True
+
+# -------------------------------------------------------------------------
+# other settings
+# -------------------------------------------------------------------------
+db._common_fields.append(auth.signature)
 
 # -------------------------------------------------------------------------
 # Define your tables below (or better in another model file) for example
@@ -130,3 +138,44 @@ auth.settings.reset_password_requires_verification = True
 # after defining tables, uncomment below to enable auditing
 # -------------------------------------------------------------------------
 # auth.enable_record_versioning(db)
+
+db.define_table(
+    'reseller',
+    Field('name', 'string', requires=IS_NOT_EMPTY()),
+    Field('currency', 'string', default='USD'),
+    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    Field('gateways', 'list:string', requires=IS_IPV4()),
+    format='%(name)s'
+)
+
+db.define_table(
+    'client',
+    Field('name', 'string',requires=IS_NOT_EMPTY()),
+    Field('reseller', 'reference reseller', comment='select the reseller'),
+    Field('currency', 'string', default='USD'),
+    Field('currency', 'string', default='Local'),
+    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    format='%(name)s'
+)
+
+db.define_table(
+    'user_reseller',
+    Field('user_id', 'reference auth_user'),
+    Field('reseller_id', 'reference reseller'),
+)
+
+db.define_table(
+    'user_client',
+    Field('user_id', 'reference auth_user'),
+    Field('reseller_id', 'reference reseller'),
+)
+
+db.define_table(
+    'rate',
+    Field('code', 'string', requires=IS_NOT_EMPTY()),
+    Field('code_name', 'string', requires=IS_NOT_EMPTY()),
+    Field('rate', 'double', requires=IS_NOT_EMPTY()),
+    Field('min_increment', 'integer', default=1, comment='min debit duration in seconds'),
+    Field('effective_date', 'datetime', default=request.now),
+    format='%(name_name)s_%(code)s'
+)

@@ -1,24 +1,36 @@
 # -*- coding: utf-8 -*-
-# this file is released under public domain and you can use without limitations
 
-# -------------------------------------------------------------------------
-# This is a sample controller
-# - index is the default action of any application
-# - user is required for authentication and authorization
-# - download is for downloading files uploaded in the db (does streaming)
-# -------------------------------------------------------------------------
+from gluon.tools import Crud
+crud = Crud(db)
+crud.settings.auth = auth
 
-
+@auth.requires_login()
 def index():
-    """
-    example action using the internationalization operator T and flash
-    rendered by views/default/index.html or views/generic.html
+    return dict()
 
-    if you need a simple wiki simply replace the two lines below with:
-    return auth.wiki()
-    """
-    response.flash = T("Hello World")
-    return dict(message=T('Welcome to web2py!'))
+@auth.requires_membership('admin')
+def new_reseller():
+    form = crud.create(db.reseller)
+    query = auth.accessible_query('read', db.reseller, auth.user.id)
+    resellers = db(query).select()
+    return dict(form=form, resellers=resellers)
+
+@auth.requires_membership('resellers')
+def new_client():
+    form = crud.create(db.client, onaccept=give_client_owner_permission)
+    query = auth.accessible_query('read', db.client, auth.user.id)
+    clients = db(query).select()
+    return dict(form=form, clients=clients)
+    form = SQLFORM(db.reseller)
+    if form.process().accepted:
+        response.flash = 'form accepted'
+    elif form.errors:
+        response.flash = 'form has errors'
+    else:
+        response.flash = 'please fill out the form'
+    return dict(form=form)
+
+def data(): return dict(form=crud())
 
 
 def user():
@@ -57,5 +69,3 @@ def call():
     supports xml, json, xmlrpc, jsonrpc, amfrpc, rss, csv
     """
     return service()
-
-

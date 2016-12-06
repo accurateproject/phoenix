@@ -1,0 +1,31 @@
+{{extend 'layout.html'}}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>{{=T('First Name')}}</th>
+            <th>{{=T('Last Name')}}</th>
+            <th>{{=T('Email')}}</th>
+            <th>{{=T('Groups')}}</th>
+            <th>{{=T('Disabled')}}</th>
+            <th>{{=T('Actions')}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{for user in users:}}
+        <tr>
+            <td>{{=user.first_name}}</td>
+            <td>{{=user.last_name}}</td>
+            <td>{{=user.email}}</td>
+            <td>{{=groups[user.id]}}</td>
+            <td>{{=user.registration_key in ('disabled', 'blocked')}}</td>
+            <td>
+                {{=A('disable', _href=URL('disable_user', args=(user.id)), _class='btn btn-danger')}}
+                {{=A('make admin', _href=URL('make_admin', args=(user.id)), _class='btn btn-warning'))}}
+                {{=A('make reseller', _href=URL('make_reseller', args=(u, _class='btn btn-default')ser.id)))}}
+                {{=A('make client', _href=URL('make_client', args=(user.id)), _class='btn btn-default'))}}
+            </td>
+        </tr>
+        {{pass}}
+    </tbody>
+</table>
