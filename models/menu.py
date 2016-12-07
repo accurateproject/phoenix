@@ -29,62 +29,14 @@ response.google_analytics_id = None
 # ----------------------------------------------------------------------------------------------------------------------
 
 response.menu = [
-    (T('Home'), False, URL('default', 'index'), [])
+    (T('Management'), False, '""', [
+        (T('New Reseller'), False, URL('default', 'new_reseller')),
+        (T('New Client'), False, URL('default', 'new_client')),
+        LI(_class="divider"),
+        (T('Manage Users'), False, URL('roles', 'manage_users')),
+    ])
+
 ]
-
-DEVELOPMENT_MENU = True
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# provide shortcuts for development. remove in production
-# ----------------------------------------------------------------------------------------------------------------------
-
-def _():
-    # ------------------------------------------------------------------------------------------------------------------
-    # shortcuts
-    # ------------------------------------------------------------------------------------------------------------------
-    app = request.application
-    ctr = request.controller
-    # ------------------------------------------------------------------------------------------------------------------
-    # useful links to internal and external resources
-    # ------------------------------------------------------------------------------------------------------------------
-    response.menu += [
-        (T('My Sites'), False, URL('admin', 'default', 'site')),
-        (T('This App'), False, '#', [
-            (T('Design'), False, URL('admin', 'default', 'design/%s' % app)),
-            LI(_class="divider"),
-            (T('Controller'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/controllers/%s.py' % (app, ctr))),
-            (T('View'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/views/%s' % (app, response.view))),
-            (T('DB Model'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/models/db.py' % app)),
-            (T('Menu Model'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/models/menu.py' % app)),
-            (T('Config.ini'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/private/appconfig.ini' % app)),
-            (T('Layout'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/views/layout.html' % app)),
-            (T('Stylesheet'), False,
-             URL(
-                 'admin', 'default', 'edit/%s/static/css/web2py-bootstrap3.css' % app)),
-            (T('Database'), False, URL(app, 'appadmin', 'index')),
-            (T('Errors'), False, URL(
-                'admin', 'default', 'errors/' + app)),
-            (T('About'), False, URL(
-                'admin', 'default', 'about/' + app)),
-        ]),
-    ]
-
-
-if DEVELOPMENT_MENU:
-    _()
 
 if "auth" in locals():
     auth.wikimenu()

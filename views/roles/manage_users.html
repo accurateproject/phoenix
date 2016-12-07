@@ -6,8 +6,10 @@
             <th>{{=T('First Name')}}</th>
             <th>{{=T('Last Name')}}</th>
             <th>{{=T('Email')}}</th>
-            <th>{{=T('Groups')}}</th>
+            <th>{{=T('Admin')}}</th>
             <th>{{=T('Disabled')}}</th>
+            <th>{{=T('Resellers')}}</th>
+            <th>{{=T('Clients')}}</th>
             <th>{{=T('Actions')}}</th>
         </tr>
     </thead>
@@ -17,15 +19,54 @@
             <td>{{=user.first_name}}</td>
             <td>{{=user.last_name}}</td>
             <td>{{=user.email}}</td>
-            <td>{{=groups[user.id]}}</td>
-            <td>{{=user.registration_key in ('disabled', 'blocked')}}</td>
+            <td id="atr{{=user.id}}">{{=auth.has_membership(user_id=user.id, role='admin')}}</td>
+            <td id="dtr{{=user.id}}">{{=user.registration_key in ('disabled', 'blocked')}}</td>
             <td>
-                {{=A('disable', _href=URL('disable_user', args=(user.id)), _class='btn btn-danger')}}
-                {{=A('make admin', _href=URL('make_admin', args=(user.id)), _class='btn btn-warning'))}}
-                {{=A('make reseller', _href=URL('make_reseller', args=(u, _class='btn btn-default')ser.id)))}}
-                {{=A('make client', _href=URL('make_client', args=(user.id)), _class='btn btn-default'))}}
+                <select class="reseller-select" user_id="{{=user.id}}" multiple="multiple">
+                    {{for r in all_resellers:}}
+                    <option value="{{=r.id}}" {{='selected' if user.resellers and r.id in user.resellers else ''}}>{{=r.name}}</option>
+                    {{pass}}
+                </select>
+            </td>
+            <td>
+                <select class="client-select" user_id="{{=user.id}}" multiple="multiple">
+                    {{for c in all_clients:}}
+                    <option value="{{=c.id}}" {{='selected' if user.clients and c.id in user.clients else ''}}>{{=c.name}}</option>
+                    {{pass}}
+                </select>
+            </td>
+            <td>
+                {{=A('toggle disable', callback=URL('toggle_disabled', args=(user.id)), target="dtr"+str(user.id), _class='btn btn-danger')}}
+                {{=A('toggle admin', callback=URL('_toggle_admin', args=(user.id)), target="atr"+str(user.id), _class='btn btn-warning')}}
+                {{=A('manage resellers', _href=URL('user_resellers', args=(user.id)), _class='btn btn-info')}}
             </td>
         </tr>
         {{pass}}
     </tbody>
 </table>
+
+{{block page_js}}
+<script>
+ $(".reseller-select").select2();
+ $('.reseller-select').on('change', function (evt) {
+     var values = [];
+     $(evt.currentTarget).find("option:selected").each(function(i, selected){
+         values[i] = $(selected).val();
+     });
+     $.post("{{=URL('_user_resellers')}}/" + $(evt.currentTarget).attr('user_id'), {"resellers": values},  function(data){
+         console.log("Response: ", data);
+     });
+ });
+
+ $(".client-select").select2();
+ $('.client-select').on('change', function (evt) {
+     var values = [];
+     $(evt.currentTarget).find("option:selected").each(function(i, selected){
+         values[i] = $(selected).val();
+     });
+     $.post("{{=URL('_user_clients')}}/" + $(evt.currentTarget).attr('user_id'), {"clients": values},  function(data){
+         console.log("Response: ", data);
+     });
+ });
+</script>
+{{end}}

@@ -15,20 +15,13 @@ def new_reseller():
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
-@auth.requires_membership('resellers')
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller'))
 def new_client():
-    form = crud.create(db.client, onaccept=give_client_owner_permission)
+    form = crud.create(db.client)
     query = auth.accessible_query('read', db.client, auth.user.id)
     clients = db(query).select()
     return dict(form=form, clients=clients)
-    form = SQLFORM(db.reseller)
-    if form.process().accepted:
-        response.flash = 'form accepted'
-    elif form.errors:
-        response.flash = 'form has errors'
-    else:
-        response.flash = 'please fill out the form'
-    return dict(form=form)
+
 
 def data(): return dict(form=crud())
 

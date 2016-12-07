@@ -88,11 +88,15 @@ from gluon.tools import Auth, Service, PluginManager
 # host names must be a list of allowed host names (glob syntax allowed)
 auth = Auth(db, host_names=myconf.get('host.names'))
 service = Service()
-plugins = PluginManager()
+#plugins = PluginManager()
 
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
 # -------------------------------------------------------------------------
+auth.settings.extra_fields['auth_user']= [
+    Field('resellers', 'list:reference reseller'),
+    Field('clients', 'list:reference client'),
+]
 auth.define_tables(username=False, signature=True)
 
 # -------------------------------------------------------------------------
@@ -141,7 +145,7 @@ db._common_fields.append(auth.signature)
 
 db.define_table(
     'reseller',
-    Field('name', 'string', requires=IS_NOT_EMPTY()),
+    Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('gateways', 'list:string', requires=IS_IPV4()),
@@ -150,24 +154,12 @@ db.define_table(
 
 db.define_table(
     'client',
-    Field('name', 'string',requires=IS_NOT_EMPTY()),
+    Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
     Field('reseller', 'reference reseller', comment='select the reseller'),
     Field('currency', 'string', default='USD'),
     Field('currency', 'string', default='Local'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
-)
-
-db.define_table(
-    'user_reseller',
-    Field('user_id', 'reference auth_user'),
-    Field('reseller_id', 'reference reseller'),
-)
-
-db.define_table(
-    'user_client',
-    Field('user_id', 'reference auth_user'),
-    Field('reseller_id', 'reference reseller'),
 )
 
 db.define_table(
