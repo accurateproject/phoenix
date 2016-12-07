@@ -31,8 +31,9 @@ response.google_analytics_id = None
 response.menu = [
     (T('Management'), True, '#', [
         (T('homde'), False, URL('default', 'index')),
-        (T('New Reseller'), False, URL('default', 'resellers')),
-        (T('New Client'), False, URL('default', 'clients')),
+        (T('Resellers'), False, URL('default', 'resellers')),
+        (T('Clients'), False, URL('default', 'clients')),
+        (T('Rate Sheets'), False, URL('default', 'rate_sheets')),
         LI(_class="divider"),
         (T('Manage Users'), False, URL('roles', 'manage_users')),
     ])

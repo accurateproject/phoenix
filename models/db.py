@@ -152,11 +152,10 @@ db.define_table(
     format='%(name)s'
 )
 
-if auth.user and not auth.has_membership('admin'):
-    reseller_list = auth.user.resellers
+if auth.user_id and not auth.has_membership('admin'):
+    reseller_list = auth.user.resellers or []
 else:
-    reseller_list = db(db.reseller).select(db.reseller.id).as_list()
-    reseller_list = [rl['id'] for rl in reseller_list]
+    reseller_list = [rl.id for rl in db(db.reseller).select(db.reseller.id)]
 
 db.define_table(
     'client',
@@ -168,14 +167,29 @@ db.define_table(
     format='%(name)s'
 )
 
+if auth.user and not auth.has_membership('admin'):
+    client_list = auth.user.clients or []
+else:
+    client_list = [rl.id for rl in db(db.client).select(db.client.id)]
+
+
+db.define_table(
+    'rate_sheet',
+    Field('client', 'reference client', comment='select the client', requires=IS_IN_DB(db(db.client.id.belongs(client_list) & (db.client.status=='enabled')), db.client.id, '%(name)s')),
+    Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
+    Field('effective_date', 'datetime', default=request.now),
+    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    format='%(name)s'
+)
+
 
 db.define_table(
     'rate',
-    Field('client', 'reference client', writable=False, readable=False),
+    Field('sheet', 'reference rate_sheet', writable=False, readable=False),
     Field('code', 'string', requires=IS_NOT_EMPTY()),
     Field('code_name', 'string', requires=IS_NOT_EMPTY()),
     Field('rate', 'double', requires=IS_NOT_EMPTY()),
     Field('min_increment', 'integer', default=1, comment='min debit duration in seconds'),
     Field('effective_date', 'datetime', default=request.now),
-    format='%(name_name)s_%(code)s'
+    format='%(code_name)s_%(code)s'
 )

@@ -18,14 +18,9 @@ def initialize_permissions():
         auth.add_permission(admin_group_id, 'update', db.client)
         auth.add_permission(admin_group_id, 'delete', db.client)
 
-        auth.add_permission(admin_group_id, 'create', db.rate)
-        auth.add_permission(admin_group_id, 'select', db.rate)
-        auth.add_permission(admin_group_id, 'read', db.rate)
-        auth.add_permission(admin_group_id, 'update', db.rate)
-        auth.add_permission(admin_group_id, 'delete', db.rate)
+        # add rate sheets
 
         auth.add_permission(reseller_group_id, 'create', db.client)
-        auth.add_permission(client_group_id, 'create', db.rate)
     else:
         admin_group_id = admin_group.id
 
@@ -38,19 +33,14 @@ def initialize_permissions():
 def give_client_owner_permissions(form):
     client_id = form.vars.id
     group_id = auth.id_group('user_%s' % auth.user.id)
+    user = db.auth_user[auth.user_id]
+    user.clients.append(client_id)
+    user.update_record()
     auth.add_permission(group_id, 'read', db.client, client_id)
     auth.add_permission(group_id, 'select', db.client, client_id)
     auth.add_permission(group_id, 'update', db.client, client_id)
     auth.add_permission(group_id, 'delete', db.client, client_id)
 
-
-def give_rate_owner_permission(form):
-    rate_id = form.vars.id
-    group_id = auth.id_group('user_%s' % auth.user.id)
-    auth.add_permission(group_id, 'read', db.rate)
-    auth.add_permission(group_id, 'select', db.rate, rate_id)
-    auth.add_permission(group_id, 'update', db.rate, rate_id)
-    auth.add_permission(group_id, 'delete', db.rate, rate_id)
 
 if myconf.get('app.first_run'):
     initialize_permissions()

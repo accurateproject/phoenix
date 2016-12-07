@@ -22,8 +22,13 @@ def clients():
     clients = db(query).select()
     return dict(form=form, clients=clients)
 
-
-def data(): return dict(form=crud())
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def rate_sheets():
+    form = SQLFORM.factory(db.rate_sheet)
+    # form process
+    user = db.auth_user[auth.user_id]
+    rate_sheets = db(db.rate_sheet.client.belongs(user.clients)).select()
+    return dict(form=form, rate_sheets=rate_sheets)
 
 
 def user():
