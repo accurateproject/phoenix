@@ -9,15 +9,15 @@ def index():
     return dict()
 
 @auth.requires_membership('admin')
-def new_reseller():
+def resellers():
     form = crud.create(db.reseller)
     query = auth.accessible_query('read', db.reseller, auth.user.id)
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller'))
-def new_client():
-    form = crud.create(db.client)
+def clients():
+    form = crud.create(db.client, onaccept=give_client_owner_permissions)
     query = auth.accessible_query('read', db.client, auth.user.id)
     clients = db(query).select()
     return dict(form=form, clients=clients)

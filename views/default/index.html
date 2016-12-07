@@ -6,3 +6,31 @@
 
 {{block right_sidebar}}
 {{end}}
+
+{{if auth.has_membership('admin'):}}
+<h1>Admin Section</h1>
+<a href="{{=URL('roles', 'manage_users')}}" class="btn btn-default btn-lg">
+    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Users
+</a>
+<a href="{{=URL('default', 'resellers')}}" class="btn btn-default btn-lg">
+    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Resellers
+</a>
+<a href="{{=URL('default', 'clients')}}" class="btn btn-default btn-lg">
+    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Clients
+</a>
+
+{{pass}}
+
+{{if auth.has_membership('reseller'):}}
+<h1>Reseller Section</h1>
+<a href="{{=URL('default', 'clients')}}" class="btn btn-default btn-lg">
+    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Clients
+</a>
+{{pass}}
+
+{{if auth.has_membership('client'):}}
+<h1>Client Section</h1>
+<a href="{{=URL('default', 'new_rate')}}" class="btn btn-default btn-lg">
+    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Rate Sheets
+</a>
+{{pass}}

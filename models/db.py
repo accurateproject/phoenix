@@ -94,8 +94,8 @@ service = Service()
 # create all tables needed by auth if not custom tables
 # -------------------------------------------------------------------------
 auth.settings.extra_fields['auth_user']= [
-    Field('resellers', 'list:reference reseller'),
-    Field('clients', 'list:reference client'),
+    Field('resellers', 'list:reference reseller', readable=False, writable=False),
+    Field('clients', 'list:reference client', readable=False, writable=False),
 ]
 auth.define_tables(username=False, signature=True)
 
@@ -152,18 +152,26 @@ db.define_table(
     format='%(name)s'
 )
 
+if auth.user and not auth.has_membership('admin'):
+    reseller_list = auth.user.resellers
+else:
+    reseller_list = db(db.reseller).select(db.reseller.id).as_list()
+    reseller_list = [rl['id'] for rl in reseller_list]
+
 db.define_table(
     'client',
     Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
-    Field('reseller', 'reference reseller', comment='select the reseller'),
+    Field('reseller', 'reference reseller', comment='select the reseller', requires=IS_IN_DB(db(db.reseller.id.belongs(reseller_list) & (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')),
     Field('currency', 'string', default='USD'),
     Field('currency', 'string', default='Local'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )
 
+
 db.define_table(
     'rate',
+    Field('client', 'reference client', writable=False, readable=False),
     Field('code', 'string', requires=IS_NOT_EMPTY()),
     Field('code_name', 'string', requires=IS_NOT_EMPTY()),
     Field('rate', 'double', requires=IS_NOT_EMPTY()),
