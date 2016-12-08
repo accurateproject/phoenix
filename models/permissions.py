@@ -18,6 +18,30 @@ def initialize_permissions():
         auth.add_permission(admin_group_id, 'update', db.client)
         auth.add_permission(admin_group_id, 'delete', db.client)
 
+        auth.add_permission(admin_group_id, 'create', db.rate_sheet)
+        auth.add_permission(admin_group_id, 'select', db.rate_sheet)
+        auth.add_permission(admin_group_id, 'read', db.rate_sheet)
+        auth.add_permission(admin_group_id, 'update', db.rate_sheet)
+        auth.add_permission(admin_group_id, 'delete', db.rate_sheet)
+
+        auth.add_permission(admin_group_id, 'create', db.rate)
+        auth.add_permission(admin_group_id, 'select', db.rate)
+        auth.add_permission(admin_group_id, 'read', db.rate)
+        auth.add_permission(admin_group_id, 'update', db.rate)
+        auth.add_permission(admin_group_id, 'delete', db.rate)
+
+        auth.add_permission(client_group_id, 'create', db.rate_sheet)
+        auth.add_permission(client_group_id, 'select', db.rate_sheet)
+        auth.add_permission(client_group_id, 'read', db.rate_sheet)
+        auth.add_permission(client_group_id, 'update', db.rate_sheet)
+        auth.add_permission(client_group_id, 'delete', db.rate_sheet)
+
+        auth.add_permission(client_group_id, 'create', db.rate)
+        auth.add_permission(client_group_id, 'select', db.rate)
+        auth.add_permission(client_group_id, 'read', db.rate)
+        auth.add_permission(client_group_id, 'update', db.rate)
+        auth.add_permission(client_group_id, 'delete', db.rate)
+
         # add rate sheets
 
         auth.add_permission(reseller_group_id, 'create', db.client)
