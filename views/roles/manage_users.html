@@ -18,22 +18,23 @@
             <td>{{=user.first_name}}</td>
             <td>{{=user.last_name}}</td>
             <td>{{=user.email}}</td>
-            <td>                {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if auth.has_membership(user_id=user.id, role='admin') else 'remove')), _id="atr"+str(user.id), callback=URL('_toggle_admin', args=(user.id)), target="atr"+str(user.id))}}
+            <td>
+	      {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if auth.has_membership(user_id=user.id, role='admin') else 'remove')), _id="atr"+str(user.id), callback=URL('_toggle_admin', args=(user.id)), target="atr"+str(user.id))}}
             </td>
             <td>
-                {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if  user.registration_key in ('disabled', 'blocked', 'pending') else 'remove')), _id="dtr"+str(user.id), callback=URL('_toggle_disabled', args=(user.id)), target="dtr"+str(user.id))}}
+              {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if  user.registration_key in ('disabled', 'blocked', 'pending') else 'remove')), _id="dtr"+str(user.id), callback=URL('_toggle_disabled', args=(user.id)), target="dtr"+str(user.id))}}
             </td>
             <td>
                 <select class="reseller-select" user_id="{{=user.id}}" multiple="multiple">
                     {{for r in all_resellers:}}
-                    <option value="{{=r.id}}" {{='selected' if user.resellers and r.id in user.resellers else ''}}>{{=r.name}}</option>
+                    <option value="{{=r.id}}" {{='selected' if user.id in users_resellers and r.id in users_resellers[user.id] else ''}}>{{=r.name}}</option>
                     {{pass}}
                 </select>
             </td>
             <td>
                 <select class="client-select" user_id="{{=user.id}}" multiple="multiple">
                     {{for c in all_clients:}}
-                    <option value="{{=c.id}}" {{='selected' if user.clients and c.id in user.clients else ''}}>{{=c.name}}</option>
+                    <option value="{{=c.id}}" {{='selected' if user.id in users_clients and c.id in users_clients[user.id] else ''}}>{{=c.name}}</option>
                     {{pass}}
                 </select>
             </td>

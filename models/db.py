@@ -93,10 +93,6 @@ service = Service()
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
 # -------------------------------------------------------------------------
-auth.settings.extra_fields['auth_user']= [
-    Field('resellers', 'list:reference reseller', readable=False, writable=False),
-    Field('clients', 'list:reference client', readable=False, writable=False),
-]
 auth.define_tables(username=False, signature=True)
 
 # -------------------------------------------------------------------------
@@ -143,6 +139,8 @@ db._common_fields.append(auth.signature)
 # -------------------------------------------------------------------------
 # auth.enable_record_versioning(db)
 
+
+
 db.define_table(
     'reseller',
     Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
@@ -152,30 +150,31 @@ db.define_table(
     format='%(name)s'
 )
 
-if auth.user_id and not auth.has_membership('admin'):
-    reseller_list = auth.user.resellers or []
-else:
-    reseller_list = [rl.id for rl in db(db.reseller).select(db.reseller.id)]
-
 db.define_table(
     'client',
     Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
-    Field('reseller', 'reference reseller', comment='select the reseller', requires=IS_IN_DB(db(db.reseller.id.belongs(reseller_list) & (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')),
+    Field('reseller', 'reference reseller', comment='select the reseller'),
     Field('currency', 'string', default='USD'),
     Field('currency', 'string', default='Local'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )
 
-if auth.user and not auth.has_membership('admin'):
-    client_list = auth.user.clients or []
-else:
-    client_list = [rl.id for rl in db(db.client).select(db.client.id)]
+db.define_table(
+    'user_reseller',
+    Field('user_id', 'reference auth_user'),
+    Field('reseller_id', 'reference reseller'),
+)
 
+db.define_table(
+    'user_client',
+    Field('user_id', 'reference auth_user'),
+    Field('client_id', 'reference client'),
+)
 
 db.define_table(
     'rate_sheet',
-    Field('client', 'reference client', comment='select the client', requires=IS_IN_DB(db(db.client.id.belongs(client_list) & (db.client.status=='enabled')), db.client.id, '%(name)s')),
+    Field('client', 'reference client', comment='select the client'),
     Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
     Field('effective_date', 'datetime', default=request.now),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
@@ -193,3 +192,32 @@ db.define_table(
     Field('effective_date', 'datetime', default=request.now),
     format='%(code_name)s_%(code)s'
 )
+
+users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
+        (db.reseller.id == db.user_reseller.reseller_id))
+
+users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
+        (db.client.id == db.user_client.client_id))
+
+def __get_user_resellers(user_id=None):
+    users_resellers = {}
+    urs = users_and_resellers if not user_id else users_and_resellers(db.auth_user.id == user_id)
+    for ur in urs.select():
+        if ur.auth_user.id not in users_resellers:
+            users_resellers[ur.auth_user.id]=[]
+        users_resellers[ur.auth_user.id].append(ur.reseller.id)
+    return users_resellers
+
+def __get_user_clients(user_id=None):
+    users_clients = {}
+    ucs = users_and_clients if not user_id else users_and_clients(db.auth_user.id == user_id)
+    for uc in ucs.select():
+        if uc.auth_user.id not in users_clients:
+            users_clients[uc.auth_user.id]=[]
+        users_clients[uc.auth_user.id].append(uc.client.id)
+    return users_clients
+
+#db.client.reseller.requires = IS_IN_DB(db((users_and_resellers.auth_user.id == auth.user_id) &
+#        (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')
+#db.rate_sheet.client.requires = IS_IN_DB(db((users_and_clients.auth_group.id == auth.user_id) &
+#        (db.client.status=='enabled')), db.client.id, '%(name)s')

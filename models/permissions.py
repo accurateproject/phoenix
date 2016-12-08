@@ -56,10 +56,9 @@ def initialize_permissions():
 
 def give_client_owner_permissions(form):
     client_id = form.vars.id
-    group_id = auth.id_group('user_%s' % auth.user.id)
-    user = db.auth_user[auth.user_id]
-    user.clients.append(client_id)
-    user.update_record()
+    db.user_client.insert(user_id=auth.user_id, client_id = client_id)
+    group_id = auth.id_group('user_%s' % auth.user_id)
+
     auth.add_permission(group_id, 'read', db.client, client_id)
     auth.add_permission(group_id, 'select', db.client, client_id)
     auth.add_permission(group_id, 'update', db.client, client_id)
