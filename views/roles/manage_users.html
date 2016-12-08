@@ -22,7 +22,7 @@
 	      {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if auth.has_membership(user_id=user.id, role='admin') else 'remove')), _id="atr"+str(user.id), callback=URL('_toggle_admin', args=(user.id)), target="atr"+str(user.id))}}
             </td>
             <td>
-              {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if  user.registration_key in ('disabled', 'blocked', 'pending') else 'remove')), _id="dtr"+str(user.id), callback=URL('_toggle_disabled', args=(user.id)), target="dtr"+str(user.id))}}
+              {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if  user.registration_key != '' else 'remove')), _id="dtr"+str(user.id), callback=URL('_toggle_disabled', args=(user.id)), target="dtr"+str(user.id))}}
             </td>
             <td>
                 <select class="reseller-select" user_id="{{=user.id}}" multiple="multiple">

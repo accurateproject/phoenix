@@ -5,18 +5,18 @@ def manage_users():
     users = db(db.auth_user).select()
     all_resellers = db(db.reseller.status == 'enabled').select()
     all_clients = db(db.client.status == 'enabled').select()
-    users_resellers = __get_user_resellers()
-    users_clients = __get_user_clients()
+    users_resellers = get_user_resellers()
+    users_clients = get_user_clients()
     return locals()
 
 @auth.requires_membership('admin')
 def _toggle_disabled():
     user = db.auth_user[request.args(0)] or redirect('default', 'index')
     registration_key = 'disabled'
-    if user.registration_key in ['disabled', 'blocked', 'pending']:
+    if user.registration_key != '':
         registration_key = ''
     user.update_record(registration_key=registration_key)
-    class_suffix = 'ok' if user.registration_key in ('disabled', 'blocked', 'pending') else 'remove'
+    class_suffix = 'ok' if user.registration_key != '' else 'remove'
     return SPAN(_class="glyphicon glyphicon-" + class_suffix)
 
 @auth.requires_membership('admin')
@@ -37,7 +37,7 @@ def _user_resellers():
     if not isinstance(new_reseller_list, list): # make it a list
         new_reseller_list = [new_reseller_list]
     user_id = long(request.args(0)) or redirect('default', 'index')
-    users_resellers = __get_user_resellers(user_id)
+    users_resellers = get_user_resellers(user_id)
 
     # remove old links
     if user_id in users_resellers:
@@ -63,7 +63,7 @@ def _user_clients():
     group_id = auth.id_group('user_%s' % user_id)
 
     # remove old links
-    users_clients = __get_user_clients(user_id)
+    users_clients = get_user_clients(user_id)
     if user_id in users_clients:
         for old_client_id in users_clients[user_id]:
             if str(old_client_id) not in new_client_list:

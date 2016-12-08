@@ -10,7 +10,7 @@ def index():
 
 @auth.requires_membership('admin')
 def resellers():
-    form = crud.create(db.reseller)
+    form = crud.create(db.reseller, onaccept=give_reseller_owner_permissions)
     query = auth.accessible_query('read', db.reseller, auth.user.id)
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)

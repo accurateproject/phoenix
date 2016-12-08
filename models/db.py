@@ -193,31 +193,9 @@ db.define_table(
     format='%(code_name)s_%(code)s'
 )
 
-users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
-        (db.reseller.id == db.user_reseller.reseller_id))
-
-users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
-        (db.client.id == db.user_client.client_id))
-
-def __get_user_resellers(user_id=None):
-    users_resellers = {}
-    urs = users_and_resellers if not user_id else users_and_resellers(db.auth_user.id == user_id)
-    for ur in urs.select():
-        if ur.auth_user.id not in users_resellers:
-            users_resellers[ur.auth_user.id]=[]
-        users_resellers[ur.auth_user.id].append(ur.reseller.id)
-    return users_resellers
-
-def __get_user_clients(user_id=None):
-    users_clients = {}
-    ucs = users_and_clients if not user_id else users_and_clients(db.auth_user.id == user_id)
-    for uc in ucs.select():
-        if uc.auth_user.id not in users_clients:
-            users_clients[uc.auth_user.id]=[]
-        users_clients[uc.auth_user.id].append(uc.client.id)
-    return users_clients
-
-#db.client.reseller.requires = IS_IN_DB(db((users_and_resellers.auth_user.id == auth.user_id) &
-#        (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')
-#db.rate_sheet.client.requires = IS_IN_DB(db((users_and_clients.auth_group.id == auth.user_id) &
-#        (db.client.status=='enabled')), db.client.id, '%(name)s')
+db.client.reseller.requires = IS_IN_DB(db((db.auth_user.id == db.user_reseller.user_id) &
+        (db.reseller.id == db.user_reseller.reseller_id) & (db.auth_user.id == auth.user_id) &
+        (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')
+db.rate_sheet.client.requires = IS_IN_DB(db((db.auth_user.id == db.user_client.user_id) &
+        (db.client.id == db.user_client.client_id) & (db.auth_user.id == auth.user_id) &
+        (db.client.status=='enabled')), db.client.id, '%(name)s')

@@ -42,8 +42,6 @@ def initialize_permissions():
         auth.add_permission(client_group_id, 'update', db.rate)
         auth.add_permission(client_group_id, 'delete', db.rate)
 
-        # add rate sheets
-
         auth.add_permission(reseller_group_id, 'create', db.client)
     else:
         admin_group_id = admin_group.id
@@ -53,6 +51,9 @@ def initialize_permissions():
     if first_user != None:
         auth.add_membership(admin_group_id, first_user.id)
 
+def give_reseller_owner_permissions(form):
+    reseller_id = form.vars.id
+    db.user_reseller.insert(user_id=auth.user_id, reseller_id = reseller_id)
 
 def give_client_owner_permissions(form):
     client_id = form.vars.id
@@ -63,6 +64,28 @@ def give_client_owner_permissions(form):
     auth.add_permission(group_id, 'select', db.client, client_id)
     auth.add_permission(group_id, 'update', db.client, client_id)
     auth.add_permission(group_id, 'delete', db.client, client_id)
+
+def get_user_resellers(user_id=None):
+    users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
+        (db.reseller.id == db.user_reseller.reseller_id))
+    users_resellers = {}
+    urs = users_and_resellers if not user_id else users_and_resellers(db.auth_user.id == user_id)
+    for ur in urs.select():
+        if ur.auth_user.id not in users_resellers:
+            users_resellers[ur.auth_user.id]=[]
+        users_resellers[ur.auth_user.id].append(ur.reseller.id)
+    return users_resellers
+
+def get_user_clients(user_id=None):
+    users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
+        (db.client.id == db.user_client.client_id))
+    users_clients = {}
+    ucs = users_and_clients if not user_id else users_and_clients(db.auth_user.id == user_id)
+    for uc in ucs.select():
+        if uc.auth_user.id not in users_clients:
+            users_clients[uc.auth_user.id]=[]
+        users_clients[uc.auth_user.id].append(uc.client.id)
+    return users_clients
 
 
 if myconf.get('app.first_run'):
