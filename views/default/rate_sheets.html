@@ -1,5 +1,29 @@
 {{extend 'layout.html'}}
 
-{{=SQLTABLE(rate_sheets)}}
+<h1>{{=T('Rate Sheets')}}</h1>
 
-{{=form}}
+<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#demo">{{=T('New')}}</button>
+<div id="demo" class="collapse">
+  {{=form}}
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>{{=T('Name')}}</th>
+      <th>{{=T('Client')}}</th>
+      <th>{{=T('Effective date')}}</th>
+      <th>{{=T('Status')}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{for rs in rate_sheets:}}
+    <tr>
+      <td>{{=rs.rate_sheet.name}}</td>
+      <td>{{=rs.rate_sheet.client.name}}</td>
+      <td>{{=rs.rate_sheet.effective_date}}</td>
+      <td>{{=rs.rate_sheet.status}}</td>
+    </tr>
+    {{pass}}
+  </tbody>
+</table>

@@ -30,7 +30,7 @@ response.google_analytics_id = None
 
 response.menu = [
     (T('Management'), True, '#', [
-        (T('homde'), False, URL('default', 'index')),
+        (T('Home'), False, URL('default', 'index')),
         (T('Resellers'), False, URL('default', 'resellers')),
         (T('Clients'), False, URL('default', 'clients')),
         (T('Rate Sheets'), False, URL('default', 'rate_sheets')),

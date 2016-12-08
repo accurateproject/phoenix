@@ -3,6 +3,7 @@
 from gluon.tools import Crud
 crud = Crud(db)
 crud.settings.auth = auth
+crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
 
 @auth.requires_login()
 def index():
@@ -24,11 +25,26 @@ def clients():
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():
-    form = SQLFORM.factory(db.rate_sheet)
-    # form process
-    user = db.auth_user[auth.user_id]
-    rate_sheets = db(db.rate_sheet.client.belongs(user.clients)).select()
+    form = crud.create(db.rate_sheet)
+    rate_sheets = db((db.rate_sheet.status =='enabled') &
+                     (db.user_client.user_id == auth.user_id)).select(
+                         join=db.user_client.on(db.rate_sheet.client == db.user_client.client_id))
     return dict(form=form, rate_sheets=rate_sheets)
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def rates():
+    rate_sheet_id = request.args(0) or redirect('index')
+    rate_sheet = db.rate_sheet[rate_sheet_id]
+    if not rate_sheet:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == rate_sheet.client)).isempty():
+        raise HTTP(403, "Not authorized")
+    db.rate.sheet.default = rate_sheet_id
+    form = crud.create(db.rate)
+    rates = db(db.rate.sheet == rate_sheet_id).select()
+    return dict(form=form, rate_sheet=rate_sheet, rates=rates)
 
 
 def user():

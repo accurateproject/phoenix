@@ -66,8 +66,6 @@ def give_client_owner_permissions(form):
     auth.add_permission(group_id, 'delete', db.client, client_id)
 
 def get_user_resellers(user_id=None):
-    users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
-        (db.reseller.id == db.user_reseller.reseller_id))
     users_resellers = {}
     urs = users_and_resellers if not user_id else users_and_resellers(db.auth_user.id == user_id)
     for ur in urs.select():
@@ -77,8 +75,6 @@ def get_user_resellers(user_id=None):
     return users_resellers
 
 def get_user_clients(user_id=None):
-    users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
-        (db.client.id == db.user_client.client_id))
     users_clients = {}
     ucs = users_and_clients if not user_id else users_and_clients(db.auth_user.id == user_id)
     for uc in ucs.select():

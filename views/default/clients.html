@@ -1,5 +1,31 @@
 {{extend 'layout.html'}}
 
-{{=SQLTABLE(clients)}}
+<h1>{{=T('Clients')}}</h1>
 
-{{=form}}
+<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#demo">{{=T('New')}}</button>
+<div id="demo" class="collapse">
+  {{=form}}
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>{{=T('Name')}}</th>
+      <th>{{=T('Reseller')}}</th>
+      <th>{{=T('Currency')}}</th>
+      <th>{{=T('Time Zone')}}</th>
+      <th>{{=T('Status')}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{for client in clients:}}
+    <tr>
+      <td>{{=client.name}}</td>
+      <td>{{=client.reseller.name}}</td>
+      <td>{{=client.currency}}</td>
+      <td>{{=client.time_zone}}</td>
+      <td>{{=client.status}}</td>
+    </tr>
+    {{pass}}
+  </tbody>
+</table>

@@ -1,5 +1,30 @@
+
 {{extend 'layout.html'}}
 
-{{=SQLTABLE(resellers)}}
+<h1>{{=T('Resellers')}}</h1>
 
-{{=form}}
+<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#demo">{{=T('New')}}</button>
+<div id="demo" class="collapse">
+  {{=form}}
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>{{=T('Name')}}</th>
+      <th>{{=T('Currency')}}</th>
+      <th>{{=T('Status')}}</th>
+      <th>{{=T('Gateways')}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{for reseller in resellers:}}
+    <tr>
+      <td>{{=reseller.name}}</td>
+      <td>{{=reseller.currency}}</td>
+      <td>{{=reseller.status}}</td>
+      <td>{{=reseller.gateways}}</td>
+    </tr>
+    {{pass}}
+  </tbody>
+</table>

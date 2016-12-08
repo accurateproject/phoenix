@@ -155,7 +155,7 @@ db.define_table(
     Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
     Field('reseller', 'reference reseller', comment='select the reseller'),
     Field('currency', 'string', default='USD'),
-    Field('currency', 'string', default='Local'),
+    Field('time_zone', 'string', default='Local'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )
@@ -192,6 +192,11 @@ db.define_table(
     Field('effective_date', 'datetime', default=request.now),
     format='%(code_name)s_%(code)s'
 )
+
+users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
+    (db.reseller.id == db.user_reseller.reseller_id))
+users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
+    (db.client.id == db.user_client.client_id))
 
 db.client.reseller.requires = IS_IN_DB(db((db.auth_user.id == db.user_reseller.user_id) &
         (db.reseller.id == db.user_reseller.reseller_id) & (db.auth_user.id == auth.user_id) &
