@@ -5,9 +5,9 @@
 # Customize your APP title, subtitle and menus here
 # ----------------------------------------------------------------------------------------------------------------------
 
-response.logo = A(B('web', SPAN(2), 'py'), XML('&trade;&nbsp;'),
-                  _class="navbar-brand", _href="http://www.web2py.com/",
-                  _id="web2py-logo")
+response.logo = A(B('phoenix'),
+                  _class="navbar-brand", _href=URL('default', 'index'),
+                  _id="logo")
 response.title = request.application.replace('_', ' ').title()
 response.subtitle = ''
 
@@ -28,15 +28,30 @@ response.google_analytics_id = None
 # this is the main application menu add/remove items as required
 # ----------------------------------------------------------------------------------------------------------------------
 
-response.menu = [
-    (T('Management'), True, '#', [
-        (T('Home'), False, URL('default', 'index')),
+menu_items = [(T('Home'), False, URL('default', 'index'))]
+
+if auth.has_membership('admin'):
+    menu_items.extend([
         (T('Resellers'), False, URL('default', 'resellers')),
         (T('Clients'), False, URL('default', 'clients')),
         (T('Rate Sheets'), False, URL('default', 'rate_sheets')),
         LI(_class="divider"),
         (T('Manage Users'), False, URL('roles', 'manage_users')),
     ])
+
+if not auth.has_membership('admin') and auth.has_membership('reseller'):
+    menu_items.extend([
+        (T('Clients'), False, URL('default', 'clients')),
+    ])
+
+if not auth.has_membership('admin') and auth.has_membership('client'):
+    menu_items.extend([
+        (T('Rate Sheets'), False, URL('default', 'rate_sheets')),
+    ])
+
+
+response.menu = [
+    (T('Management'), True, '#', menu_items)
 
 ]
 
