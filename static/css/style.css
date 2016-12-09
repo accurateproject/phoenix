@@ -1,3 +1,7 @@
 .reseller-select, .client-select {
     width: 300px;
 }
+
+#import_rates_btn {
+    float: right;
+}
