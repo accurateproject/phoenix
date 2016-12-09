@@ -22,7 +22,7 @@ from gluon.contrib.appconfig import AppConfig
 # -------------------------------------------------------------------------
 # once in production, remove reload=True to gain full speed
 # -------------------------------------------------------------------------
-myconf = AppConfig(reload=True)
+myconf = AppConfig(reload=False)
 
 if not request.env.web2py_runtime_gae:
     # ---------------------------------------------------------------------
@@ -156,6 +156,7 @@ db.define_table(
     Field('reseller', 'reference reseller', comment='select the reseller'),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
+    Field('nb_prefix', 'string', default=''),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )

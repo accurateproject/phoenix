@@ -14,6 +14,7 @@
       <th>{{=T('Reseller')}}</th>
       <th>{{=T('Currency')}}</th>
       <th>{{=T('Time Zone')}}</th>
+      <th>{{=T('Prefix')}}</th>
       <th>{{=T('Status')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
@@ -25,6 +26,7 @@
       <td>{{=client.reseller.name}}</td>
       <td>{{=client.currency}}</td>
       <td>{{=client.time_zone}}</td>
+      <td>{{=client.nb_prefix}}</td>
       <td>{{=client.status}}</td>
       <td>{{=A(T('edit'), _href=URL('default', 'clients', args=client.id), _class="btn btn-link")}}</td>
     </tr>
