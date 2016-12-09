@@ -11,21 +11,21 @@ def index():
 
 @auth.requires_membership('admin')
 def resellers():
-    form = crud.create(db.reseller, onaccept=give_reseller_owner_permissions)
+    form = crud.update(db.reseller, request.args(0), onaccept=give_reseller_owner_permissions)
     query = auth.accessible_query('read', db.reseller, auth.user.id)
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller'))
 def clients():
-    form = crud.create(db.client, onaccept=give_client_owner_permissions)
+    form = crud.update(db.client, request.args(0), onaccept=give_client_owner_permissions)
     query = auth.accessible_query('read', db.client, auth.user.id)
     clients = db(query).select()
     return dict(form=form, clients=clients)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():
-    form = crud.create(db.rate_sheet)
+    form = crud.update(db.rate_sheet, request.args(0))
     rate_sheets = db((db.rate_sheet.status =='enabled') &
                      (db.user_client.user_id == auth.user_id)).select(
                          join=db.user_client.on(db.rate_sheet.client == db.user_client.client_id))
