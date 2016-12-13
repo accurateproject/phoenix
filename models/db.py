@@ -35,6 +35,7 @@ if not request.env.web2py_runtime_gae:
              lazy_tables=True
     )
     session.connect(request, response, cookie_key=myconf.get('app.cookie_key'), compression_level=9)
+    from gluon.custom_import import track_changes; track_changes(True)
 else:
     # ---------------------------------------------------------------------
     # connect to Google BigTable (optional 'google:datastore://namespace')
@@ -158,6 +159,7 @@ db.define_table(
     Field('time_zone', 'string', default='Local'),
     Field('nb_prefix', 'string', default=''),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    Field('active_rate_sheet', 'reference rate_sheet', writable=False),
     format='%(name)s'
 )
 
@@ -178,6 +180,7 @@ db.define_table(
     Field('client', 'reference client', comment='select the client'),
     Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
     Field('effective_date', 'datetime', default=request.now),
+    Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )
@@ -205,3 +208,12 @@ db.client.reseller.requires = IS_IN_DB(db((db.auth_user.id == db.user_reseller.u
 db.rate_sheet.client.requires = IS_IN_DB(db((db.auth_user.id == db.user_client.user_id) &
         (db.client.id == db.user_client.client_id) & (db.auth_user.id == auth.user_id) &
         (db.client.status=='enabled')), db.client.id, '%(name)s')
+
+
+def __check_rate_sheet(rate_sheet):
+    if not rate_sheet:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == rate_sheet.client)).isempty():
+        raise HTTP(403, "Not authorized")

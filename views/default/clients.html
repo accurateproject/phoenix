@@ -16,6 +16,7 @@
       <th>{{=T('Time Zone')}}</th>
       <th>{{=T('Prefix')}}</th>
       <th>{{=T('Status')}}</th>
+      <th>{{=T('Active rate sheet')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
@@ -28,7 +29,11 @@
       <td>{{=client.time_zone}}</td>
       <td>{{=client.nb_prefix}}</td>
       <td>{{=client.status}}</td>
-      <td>{{=A(T('edit'), _href=URL('default', 'clients', args=client.id), _class="btn btn-link")}}</td>
+      <td>{{=client.active_rate_sheet.name if client.active_rate_sheet else T('not set')}}</td>
+      <td>
+	{{=A(T('edit'), _href=URL('default', 'clients', args=client.id), _class="btn btn-link")}}
+	{{=A(T('rate sheets'), _href=URL('default', 'client_rate_sheets', args=client.id), _class="btn btn-link")}}
+      </td>
     </tr>
     {{pass}}
   </tbody>

@@ -11,7 +11,7 @@ def manage_users():
 
 @auth.requires_membership('admin')
 def _toggle_disabled():
-    user = db.auth_user[request.args(0)] or redirect('user', 'not_autorized')
+    user = db.auth_user[request.args(0)] or redirect(URL('user', 'not_autorized'))
     registration_key = 'disabled'
     if user.registration_key != '':
         registration_key = ''
@@ -21,7 +21,7 @@ def _toggle_disabled():
 
 @auth.requires_membership('admin')
 def _toggle_admin():
-    user_id = request.args(0) or redirect('user', 'not_autorized')
+    user_id = request.args(0) or redirect(URL('user', 'not_autorized'))
     if user_id == str(auth.user_id):
         return "don't de-admin yourself"
     if auth.has_membership(user_id=user_id, role='admin'):
@@ -36,7 +36,7 @@ def _user_resellers():
     new_reseller_list = request.vars['resellers[]'] or []
     if not isinstance(new_reseller_list, list): # make it a list
         new_reseller_list = [new_reseller_list]
-    user_id = long(request.args(0)) or redirect('user', 'not_autorized')
+    user_id = long(request.args(0)) or redirect(URL('user', 'not_autorized'))
     users_resellers = get_user_resellers(user_id)
 
     # remove old links
@@ -59,7 +59,7 @@ def _user_clients():
     new_client_list = request.vars['clients[]'] or []
     if not isinstance(new_client_list, list): # make it a list
         new_client_list = [new_client_list]
-    user_id = long(request.args(0)) or redirect('user', 'not_autorized')
+    user_id = long(request.args(0)) or redirect(URL('user', 'not_autorized'))
     group_id = auth.id_group('user_%s' % user_id)
 
     # remove old links

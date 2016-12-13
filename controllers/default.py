@@ -26,11 +26,23 @@ def clients():
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():
     form = crud.update(db.rate_sheet, request.args(0))
-    rate_sheets = db((db.rate_sheet.status =='enabled') &
-                     (db.user_client.user_id == auth.user_id)).select(
+    rate_sheets = db(db.user_client.user_id == auth.user_id).select(
                          join=db.user_client.on(db.rate_sheet.client == db.user_client.client_id),
                          groupby=db.rate_sheet.id)
     return dict(form=form, rate_sheets=rate_sheets)
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def client_rate_sheets():
+    client_id=request.args(0) or redirect('index')
+    client = db.client[client_id] or redirect('index')
+    if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
+        redirect(URL('user', 'not_autorized'))
+    db.rate_sheet.client.default = client_id
+    db.rate_sheet.client.readable = False
+    db.rate_sheet.client.writable = False
+    form = crud.update(db.rate_sheet, request.args(1))
+    rate_sheets = db(db.rate_sheet.client == client_id).select()
+    return dict(form=form, rate_sheets=rate_sheets, client=client)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheet_import():
@@ -38,12 +50,7 @@ def rate_sheet_import():
     from dateutil.parser import parse
     rate_sheet_id = request.args(0) or redirect('index')
     rate_sheet = db.rate_sheet[rate_sheet_id]
-    if not rate_sheet:
-        raise HTTP(404, "Not found")
-    # check  it belongs to a ratesheet owned by the current user
-    if db((db.user_client.user_id == auth.user_id) &
-          (db.user_client.client_id == rate_sheet.client)).isempty():
-        raise HTTP(403, "Not authorized")
+    __check_rate_sheet(rate_sheet)
 
     db.rate.sheet.default = rate_sheet_id
     form = FORM(INPUT(_type='file', _name='data'), INPUT(_type='submit'))
@@ -63,16 +70,13 @@ def rate_sheet_import():
 def rates():
     rate_sheet_id = request.args(0) or redirect('index')
     rate_sheet = db.rate_sheet[rate_sheet_id]
-    if not rate_sheet:
-        raise HTTP(404, "Not found")
-    # check  it belongs to a ratesheet owned by the current user
-    if db((db.user_client.user_id == auth.user_id) &
-          (db.user_client.client_id == rate_sheet.client)).isempty():
-        raise HTTP(403, "Not authorized")
+    __check_rate_sheet(rate_sheet)
     db.rate.sheet.default = rate_sheet_id
     form = crud.update(db.rate, request.args(1))
     rates = db(db.rate.sheet == rate_sheet_id).select()
     return dict(form=form, rate_sheet=rate_sheet, rates=rates)
+
+
 
 
 def user():

@@ -13,6 +13,7 @@
       <th>{{=T('Name')}}</th>
       <th>{{=T('Client')}}</th>
       <th>{{=T('Effective date')}}</th>
+      <th>{{=T('Direction')}}</th>
       <th>{{=T('Status')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
@@ -23,12 +24,14 @@
       <td>{{=rs.rate_sheet.name}}</td>
       <td>{{=rs.rate_sheet.client.name}}</td>
       <td>{{=rs.rate_sheet.effective_date}}</td>
+      <td>{{=rs.rate_sheet.direction}}</td>
       <td>{{=rs.rate_sheet.status}}</td>
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
 	  {{=A(T('edit'), _href=URL('default', 'rate_sheets', args=rs.rate_sheet.id), _class="btn btn-link")}}
 	  {{=A(T('rates'), _href=URL('default', 'rates', args=rs.rate_sheet.id), _class="btn btn-link")}}
 	  {{=A(T('import'), _href=URL('default', 'rate_sheet_import', args=rs.rate_sheet.id), _class="btn btn-link")}}
+	  {{=A(T('activate'), _href=URL('engine', 'activate_rate_sheet', args=rs.rate_sheet.id), _class="btn btn-danger")}}
 	</div>
       </td>
     </tr>
