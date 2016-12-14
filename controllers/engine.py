@@ -30,8 +30,10 @@ def activate_stats():
     if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client.id) & (db.user_client.user_id == auth.user_id)).isempty():
         redirect(URL('user', 'not_autorized'))
 
+    actions = db(db.act.client == client_id).select()
+    triggers = db(db.action_trigger.client == client_id).select()
     stats = db(db.stats.client == client_id).select()
-    response = accurate.stats_to_tp(client, stats)
+    response = accurate.stats_to_tp(client, actions, triggers, stats)
     response +=  accurate.activate_tpid(client.name + "_stats")
 
     return response

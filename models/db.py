@@ -197,22 +197,33 @@ db.define_table(
     format='%(code_name)s_%(code)s'
 )
 
+#ActionsId[0],Action[1],ExtraParameters[2],Filter[3],BalanceId[4],BalanceType[5],Directions[6],Categories[7],DestinationIds[8],RatingSubject[9],SharedGroup[10],ExpiryTime[11],TimingIds[12],Units[13],BalanceWeight[14],BalanceBlocker[15],BalanceDisabled[16],Weight[17]
 db.define_table(
-    'cc_action',
-    Field('name', 'string', required=True),
+    'act',
+    Field('client', 'reference client', required=True, readable=False, writable=False),
+    Field('name', 'string', unique=False, required=True, requires=IS_NOT_EMPTY()),
+    Field('action_type', 'string', default='log', requires=IS_IN_SET(('log',))),
     format='%(name)s'
 )
 
+#Tag[0],UniqueId[1],ThresholdType[2],ThresholdValue[3],Recurrent[4],MinSleep[5],ExpiryTime[6],ActivationTime[7],BalanceTag[8],BalanceType[9],BalanceDirections[10],BalanceCategories[11],BalanceDestinationIds[12],BalanceRatingSubject[13],BalanceSharedGroup[14],BalanceExpiryTime[15],BalanceTimingIds[16],BalanceWeight[17],BalanceBlocker[18],BalanceDisabled[19],StatsMinQueuedItems[20],ActionsId[21],Weight[22]
 db.define_table(
-    'cc_trigger',
-    Field('name', 'string', required=True),
+    'action_trigger',
+    Field('client', 'reference client', required=True, readable=False, writable=False),
+    Field('name', 'string', unique=False, required=True, requires=IS_NOT_EMPTY()),
+    Field('threshold_type', 'string', requires=IS_IN_SET(('min_asr', 'max_asr', 'min_acd', 'max_acd', 'min_tcd', 'max_tcd', 'min_acc', 'max_acc', 'min_tcc', 'max_tcc', 'min_ddc', 'max_ddc'))),
+    Field('threshold_value', 'double'),
+    Field('recurrent', 'boolean'),
+    Field('min_sleep', 'string'),
+    Field('min_queued_items', 'integer'),
+    Field('act', 'reference act', required=True),
     format='%(name)s'
 )
-
 
 db.define_table(
     'stats',
     Field('client', 'reference client', required=True, readable=False, writable=False),
+    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'stats.name')]),
     Field('queue_length', 'integer', required=True),
     Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
     Field('save_interval', 'string', default="60s", comment=T('save interval (s/m/h)')),
@@ -236,7 +247,7 @@ db.define_table(
     Field('rated_accounts', 'list:string'),
     Field('rated_subjects', 'list:string'),
     Field('cost_interval', 'string'),
-    Field('triggers', 'list:reference cc_trigger'),
+    Field('triggers', 'list:string'),
 )
 
 
@@ -258,20 +269,3 @@ db.stats.client.requires = IS_IN_DB(db(
     (db.client.id == db.user_client.client_id) &
     (auth.user_id == db.user_client.user_id) &
     (db.client.status=='enabled')), db.client.id, '%(name)s')
-
-
-def __check_rate_sheet(rate_sheet):
-    if not rate_sheet:
-        raise HTTP(404, "Not found")
-    # check  it belongs to a ratesheet owned by the current user
-    if db((db.user_client.user_id == auth.user_id) &
-          (db.user_client.client_id == rate_sheet.client)).isempty():
-        raise HTTP(403, "Not authorized")
-
-def __check_stats(stats):
-    if not stats:
-        raise HTTP(404, "Not found")
-    # check  it belongs to a ratesheet owned by the current user
-    if db((db.user_client.user_id == auth.user_id) &
-          (db.user_client.client_id == stats.client)).isempty():
-        raise HTTP(403, "Not authorized")

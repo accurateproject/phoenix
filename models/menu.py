@@ -34,7 +34,6 @@ if auth.has_membership('admin'):
     menu_items.extend([
         (T('Resellers'), False, URL('default', 'resellers')),
         (T('Clients'), False, URL('default', 'clients')),
-        (T('Rate Sheets'), False, URL('default', 'rate_sheets')),
         LI(_class="divider"),
         (T('Manage Users'), False, URL('roles', 'manage_users')),
     ])

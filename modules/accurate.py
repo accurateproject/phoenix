@@ -74,7 +74,6 @@ def rate_sheet_to_tp(rs, rs_rates):
         response += key + '<br>'
         r = ''
         for result in result_list:
-            print result
             if result['result'] != 'OK':
                 r += 'result: %s error: %s <br>' % (result['result'], result['error'])
         if len(r) == 0:
@@ -115,23 +114,62 @@ def account_to_tp(rs):
         result += 'OK<br>'
     return result
 
-def stats_to_tp(client, stats):
-    cdr_stats = []
+def stats_to_tp(client, actions, triggers, stats):
+    result = 'Actions activation<br>'
+    partial_result = 'OK<br>'
+    action_dict = {}
+    for action in actions:
+        action_tag = action.name.replace(' ', '_')
+        if action_tag not in action_dict:
+            action_dict[action_tag] = []
+        action_dict[action_tag].append({
+            'Identifier': action.action_type,
+        })
+    for action_tag, action_body in action_dict.iteritems():
+        r = call('SetTPActions', {'TPid': client.name + "_stats", 'ActionsId': action_tag, "Actions": action_body})
+        if r['result'] != 'OK':
+            partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+            break
+    result += partial_result
+
+    result += 'Trigger activation<br>'
+    partial_result = 'OK<br>'
+    trigger_dict = {}
+    for trigger in triggers:
+        trigger_tag = trigger.name.replace(' ', '_')
+        if trigger_tag not in trigger_dict:
+            trigger_dict[trigger_tag] = []
+        trigger_dict[trigger_tag].append({
+            'ThresholdType': trigger.threshold_type,
+	    'ThresholdValue': trigger.threshold_value,
+	    'Recurrent': trigger.recurrent,
+	    'MinSleep': trigger.min_sleep,
+            'MinQueuedItems': trigger.min_queued_items,
+	    'ActionsId': trigger.act.name,
+        })
+    for trigger_tag, trigger_body in trigger_dict.iteritems():
+        print trigger_body
+        r = call('SetTPActionTriggers', {'TPid': client.name + "_stats", 'ActionTriggersId': trigger_tag, "ActionTriggers": trigger_body})
+        if r['result'] != 'OK':
+            partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+            break
+    result += partial_result
+
+    result += 'Stats activation<br>'
+    partial_result = 'OK<br>'
     for st in stats:
-       cdr_stats.append({'QueueLength': str(st.queue_length), 'TimeWindow': str(st.time_window), 'SaveInterval': str(st.save_interval), 'Metrics': ';'.join(st.metrics),
+        r = call('SetTPCdrStats', {'TPid': client.name + "_stats", 'CdrStatsId': st.name, "CdrStats": [{'QueueLength': str(st.queue_length), 'TimeWindow': str(st.time_window), 'SaveInterval': str(st.save_interval), 'Metrics': ';'.join(st.metrics),
         'SetupInterval': str(st.setup_interval), 'TORs': ';'.join(st.tors), 'CdrHosts': ';'.join(st.cdr_hosts), 'CdrSources': ';'.join(st.cdr_sources),
         'ReqTypes': ';'.join(st.req_types), 'Directions': ';'.join(st.directions), 'Tenants': ';'.join(st.tenants), 'Categories': ';'.join(st.categories),
         'Accounts': ';'.join(st.accounts), 'Subjects': ';'.join(st.subjects), 'DestinationIds': ';'.join(st.destination_ids),
         'PddInterval': st.pdd_interval, 'UsageInterval': st.usage_interval, 'Suppliers': ';'.join(st.suppliers), 'DisconnectCauses': ';'.join(st.disconnect_causes),
         'MediationRunIds': ';'.join(st.mediation_run_ids), 'RatedAccounts': ';'.join(st.rated_accounts),
-        'RatedSubject': ';'.join(st.rated_subjects), 'CostInterval': st.cost_interval, 'ActionTriggers': ';'.join(st.triggers)})
+        'RatedSubject': ';'.join(st.rated_subjects), 'CostInterval': st.cost_interval, 'ActionTriggers': ';'.join(st.triggers)}]})
+        if r['result'] != 'OK':
+            partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+            break
+    result += partial_result
 
-    r = call('SetTPCdrStats', {'TPid': client.name + "_stats", 'CdrStatsId': '%s_CDRSAT_%s' % (client.reseller.name, client.name), "CdrStats": cdr_stats})
-    result = 'Stats activation<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
     #r = call('SetTPUser', {'TPid': rs.name + "_acc", 'Tenant': rs.client.reseller.name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
     #                       'Profile':[
     #                           {'AttrName': 'Account', 'AttrValue': rs.client.name},

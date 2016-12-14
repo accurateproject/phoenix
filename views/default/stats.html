@@ -14,6 +14,7 @@
 <table class="table">
   <thead>
     <tr>
+      <th>{{=T('Name')}}</th>
       <th>{{=T('Queue Length')}}</th>
       <th>{{=T('Time window')}}</th>
       <th>{{=T('Save interval')}}</th>
@@ -43,33 +44,34 @@
   <tbody>
     {{for st in stats:}}
     <tr>
-      <td>{{=st.stats.queue_length}}</td>
-      <td>{{=st.stats.time_window}}</td>
-      <td>{{=st.stats.save_interval}}</td>
-      <td>{{=st.stats.metrics}}</td>
-      <td>{{=st.stats.setup_interval}}</td>
-      <td>{{=st.stats.tors}}</td>
-      <td>{{=st.stats.cdr_hosts}}</td>
-      <td>{{=st.stats.cdr_sources}}</td>
-      <td>{{=st.stats.req_types}}</td>
-      <td>{{=st.stats.directions}}</td>
-      <td>{{=st.stats.tenants}}</td>
-      <td>{{=st.stats.categories}}</td>
-      <td>{{=st.stats.accounts}}</td>
-      <td>{{=st.stats.subjects}}</td>
-      <td>{{=st.stats.destination_ids}}</td>
-      <td>{{=st.stats.pdd_interval}}</td>
-      <td>{{=st.stats.usage_interval}}</td>
-      <td>{{=st.stats.suppliers}}</td>
-      <td>{{=st.stats.disconnect_causes}}</td>
-      <td>{{=st.stats.mediation_run_ids}}</td>
-      <td>{{=st.stats.rated_accounts}}</td>
-      <td>{{=st.stats.rated_subjects}}</td>
-      <td>{{=st.stats.cost_interval}}</td>
-      <td>{{=st.stats.triggers}}</td>
+      <td>{{=st.name}}</td>
+      <td>{{=st.queue_length}}</td>
+      <td>{{=st.time_window}}</td>
+      <td>{{=st.save_interval}}</td>
+      <td>{{=', '.join(st.metrics)}}</td>
+      <td>{{=st.setup_interval}}</td>
+      <td>{{=', '.join(st.tors)}}</td>
+      <td>{{=', '.join(st.cdr_hosts)}}</td>
+      <td>{{=', '.join(st.cdr_sources)}}</td>
+      <td>{{=', '.join(st.req_types)}}</td>
+      <td>{{=', '.join(st.directions)}}</td>
+      <td>{{=', '.join(st.tenants)}}</td>
+      <td>{{=', '.join(st.categories)}}</td>
+      <td>{{=', '.join(st.accounts)}}</td>
+      <td>{{=', '.join(st.subjects)}}</td>
+      <td>{{=', '.join(st.destination_ids)}}</td>
+      <td>{{=st.pdd_interval}}</td>
+      <td>{{=st.usage_interval}}</td>
+      <td>{{=', '.join(st.suppliers)}}</td>
+      <td>{{=', '.join(st.disconnect_causes)}}</td>
+      <td>{{=', '.join(st.mediation_run_ids)}}</td>
+      <td>{{=', '.join(st.rated_accounts)}}</td>
+      <td>{{=', '.join(st.rated_subjects)}}</td>
+      <td>{{=st.cost_interval}}</td>
+      <td>{{=', '.join(st.triggers)}}</td>
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
-	  {{=A(T('edit'), _href=URL('default', 'stats', args=(st.stats.client.id, st.stats.id)), _class="btn btn-link")}}
+	  {{=A(T('edit'), _href=URL('default', 'stats', args=(st.client.id, st.id)), _class="btn btn-link")}}
 	</div>
       </td>
     </tr>

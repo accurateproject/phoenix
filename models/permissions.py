@@ -46,17 +46,17 @@ def initialize_permissions():
     auth.add_permission(admin_group_id, 'update', db.stats)
     auth.add_permission(admin_group_id, 'delete', db.stats)
 
-    auth.add_permission(admin_group_id, 'create', db.cc_trigger)
-    auth.add_permission(admin_group_id, 'select', db.cc_trigger)
-    auth.add_permission(admin_group_id, 'read', db.cc_trigger)
-    auth.add_permission(admin_group_id, 'update', db.cc_trigger)
-    auth.add_permission(admin_group_id, 'delete', db.cc_trigger)
+    auth.add_permission(admin_group_id, 'create', db.action_trigger)
+    auth.add_permission(admin_group_id, 'select', db.action_trigger)
+    auth.add_permission(admin_group_id, 'read', db.action_trigger)
+    auth.add_permission(admin_group_id, 'update', db.action_trigger)
+    auth.add_permission(admin_group_id, 'delete', db.action_trigger)
 
-    auth.add_permission(admin_group_id, 'create', db.cc_action)
-    auth.add_permission(admin_group_id, 'select', db.cc_action)
-    auth.add_permission(admin_group_id, 'read', db.cc_action)
-    auth.add_permission(admin_group_id, 'update', db.cc_action)
-    auth.add_permission(admin_group_id, 'delete', db.cc_action)
+    auth.add_permission(admin_group_id, 'create', db.act)
+    auth.add_permission(admin_group_id, 'select', db.act)
+    auth.add_permission(admin_group_id, 'read', db.act)
+    auth.add_permission(admin_group_id, 'update', db.act)
+    auth.add_permission(admin_group_id, 'delete', db.act)
 
     auth.add_permission(client_group_id, 'create', db.rate_sheet)
     auth.add_permission(client_group_id, 'select', db.rate_sheet)
@@ -76,17 +76,17 @@ def initialize_permissions():
     auth.add_permission(client_group_id, 'update', db.stats)
     auth.add_permission(client_group_id, 'delete', db.stats)
 
-    auth.add_permission(client_group_id, 'create', db.cc_trigger)
-    auth.add_permission(client_group_id, 'select', db.cc_trigger)
-    auth.add_permission(client_group_id, 'read', db.cc_trigger)
-    auth.add_permission(client_group_id, 'update', db.cc_trigger)
-    auth.add_permission(client_group_id, 'delete', db.cc_trigger)
+    auth.add_permission(client_group_id, 'create', db.action_trigger)
+    auth.add_permission(client_group_id, 'select', db.action_trigger)
+    auth.add_permission(client_group_id, 'read', db.action_trigger)
+    auth.add_permission(client_group_id, 'update', db.action_trigger)
+    auth.add_permission(client_group_id, 'delete', db.action_trigger)
 
-    auth.add_permission(client_group_id, 'create', db.cc_action)
-    auth.add_permission(client_group_id, 'select', db.cc_action)
-    auth.add_permission(client_group_id, 'read', db.cc_action)
-    auth.add_permission(client_group_id, 'update', db.cc_action)
-    auth.add_permission(client_group_id, 'delete', db.cc_action)
+    auth.add_permission(client_group_id, 'create', db.act)
+    auth.add_permission(client_group_id, 'select', db.act)
+    auth.add_permission(client_group_id, 'read', db.act)
+    auth.add_permission(client_group_id, 'update', db.act)
+    auth.add_permission(client_group_id, 'delete', db.act)
 
     auth.add_permission(reseller_group_id, 'create', db.client)
 
@@ -125,3 +125,35 @@ def get_user_clients(user_id=None):
 
 if myconf.get('app.first_run'):
     initialize_permissions()
+
+def __check_rate_sheet(rate_sheet):
+    if not rate_sheet:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == rate_sheet.client)).isempty():
+        raise HTTP(403, "Not authorized")
+
+def __check_stats(stats):
+    if not stats:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == stats.client)).isempty():
+        raise HTTP(403, "Not authorized")
+
+def __check_trigger(trigger):
+    if not trigger:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == trigger.client)).isempty():
+        raise HTTP(403, "Not authorized")
+
+def __check_action(action):
+    if not action:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == action.client)).isempty():
+        raise HTTP(403, "Not authorized")

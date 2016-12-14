@@ -84,18 +84,34 @@ def stats():
     db.stats.accounts.default = [client.name]
     db.stats.client.default = client.id
     form = crud.update(db.stats, request.args(1), next=URL('default', 'stats', args=client.id))
-    stats = db((db.user_client.user_id == auth.user_id) & (db.stats.client == client.id)).select(
-                         join=db.user_client.on(db.stats.client == db.user_client.client_id),
-                         groupby=db.stats.id)
+    stats = db(db.stats.client == client.id).select()
     return dict(form=form, client=client, stats=stats)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def triggers():
-    pass
+    client_id = request.args(0) or redirect('index')
+    client = db.client[client_id] or redirect(URL('default', 'index'))
+    trigger_id = request.args(1)
+    if trigger_id is not None:
+        trigger = db.action_trigger[trigger_id]
+        __check_trigger(trigger)
+    db.action_trigger.client.default = client.id
+    form = crud.update(db.action_trigger, request.args(1), next=URL('default', 'triggers', args=client.id))
+    triggers = db(db.action_trigger.client == client.id).select()
+    return dict(form=form, client=client, triggers=triggers)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def actions():
-    pass
+    client_id = request.args(0) or redirect('index')
+    client = db.client[client_id] or redirect(URL('default', 'index'))
+    action_id = request.args(1)
+    if action_id is not None:
+        action = db.act[action_id]
+        __check_action(action)
+    db.act.client.default = client.id
+    form = crud.update(db.act, request.args(1), next=URL('default', 'actions', args=client.id))
+    actions = db(db.act.client == client.id).select()
+    return dict(form=form, client=client, actions=actions)
 
 
 
