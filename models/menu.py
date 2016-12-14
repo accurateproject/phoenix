@@ -44,12 +44,6 @@ if not auth.has_membership('admin') and auth.has_membership('reseller'):
         (T('Clients'), False, URL('default', 'clients')),
     ])
 
-if not auth.has_membership('admin') and auth.has_membership('client'):
-    menu_items.extend([
-        (T('Rate Sheets'), False, URL('default', 'rate_sheets')),
-    ])
-
-
 response.menu = [
     (T('Management'), True, '#', menu_items)
 

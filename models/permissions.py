@@ -5,51 +5,90 @@ def initialize_permissions():
         admin_group_id = auth.add_group('admin', 'application level administrator')
         reseller_group_id = auth.add_group('reseller', 'application level administrator')
         client_group_id = auth.add_group('client', 'application level administrator')
-
-        auth.add_permission(admin_group_id, 'create', db.reseller)
-        auth.add_permission(admin_group_id, 'select', db.reseller)
-        auth.add_permission(admin_group_id, 'read', db.reseller)
-        auth.add_permission(admin_group_id, 'update', db.reseller)
-        auth.add_permission(admin_group_id, 'delete', db.reseller)
-
-        auth.add_permission(admin_group_id, 'create', db.client)
-        auth.add_permission(admin_group_id, 'select', db.client)
-        auth.add_permission(admin_group_id, 'read', db.client)
-        auth.add_permission(admin_group_id, 'update', db.client)
-        auth.add_permission(admin_group_id, 'delete', db.client)
-
-        auth.add_permission(admin_group_id, 'create', db.rate_sheet)
-        auth.add_permission(admin_group_id, 'select', db.rate_sheet)
-        auth.add_permission(admin_group_id, 'read', db.rate_sheet)
-        auth.add_permission(admin_group_id, 'update', db.rate_sheet)
-        auth.add_permission(admin_group_id, 'delete', db.rate_sheet)
-
-        auth.add_permission(admin_group_id, 'create', db.rate)
-        auth.add_permission(admin_group_id, 'select', db.rate)
-        auth.add_permission(admin_group_id, 'read', db.rate)
-        auth.add_permission(admin_group_id, 'update', db.rate)
-        auth.add_permission(admin_group_id, 'delete', db.rate)
-
-        auth.add_permission(client_group_id, 'create', db.rate_sheet)
-        auth.add_permission(client_group_id, 'select', db.rate_sheet)
-        auth.add_permission(client_group_id, 'read', db.rate_sheet)
-        auth.add_permission(client_group_id, 'update', db.rate_sheet)
-        auth.add_permission(client_group_id, 'delete', db.rate_sheet)
-
-        auth.add_permission(client_group_id, 'create', db.rate)
-        auth.add_permission(client_group_id, 'select', db.rate)
-        auth.add_permission(client_group_id, 'read', db.rate)
-        auth.add_permission(client_group_id, 'update', db.rate)
-        auth.add_permission(client_group_id, 'delete', db.rate)
-
-        auth.add_permission(reseller_group_id, 'create', db.client)
     else:
         admin_group_id = admin_group.id
+        reseller_group_id = db(db.auth_group.role =='reseller').select().first().id
+        client_group_id = db(db.auth_group.role =='client').select().first().id
+
 
     # make the first user admin
     first_user = myrecord = db(db.auth_user).select().first()
     if first_user != None:
         auth.add_membership(admin_group_id, first_user.id)
+
+    auth.add_permission(admin_group_id, 'create', db.reseller)
+    auth.add_permission(admin_group_id, 'select', db.reseller)
+    auth.add_permission(admin_group_id, 'read', db.reseller)
+    auth.add_permission(admin_group_id, 'update', db.reseller)
+    auth.add_permission(admin_group_id, 'delete', db.reseller)
+
+    auth.add_permission(admin_group_id, 'create', db.client)
+    auth.add_permission(admin_group_id, 'select', db.client)
+    auth.add_permission(admin_group_id, 'read', db.client)
+    auth.add_permission(admin_group_id, 'update', db.client)
+    auth.add_permission(admin_group_id, 'delete', db.client)
+
+    auth.add_permission(admin_group_id, 'create', db.rate_sheet)
+    auth.add_permission(admin_group_id, 'select', db.rate_sheet)
+    auth.add_permission(admin_group_id, 'read', db.rate_sheet)
+    auth.add_permission(admin_group_id, 'update', db.rate_sheet)
+    auth.add_permission(admin_group_id, 'delete', db.rate_sheet)
+
+    auth.add_permission(admin_group_id, 'create', db.rate)
+    auth.add_permission(admin_group_id, 'select', db.rate)
+    auth.add_permission(admin_group_id, 'read', db.rate)
+    auth.add_permission(admin_group_id, 'update', db.rate)
+    auth.add_permission(admin_group_id, 'delete', db.rate)
+
+    auth.add_permission(admin_group_id, 'create', db.stats)
+    auth.add_permission(admin_group_id, 'select', db.stats)
+    auth.add_permission(admin_group_id, 'read', db.stats)
+    auth.add_permission(admin_group_id, 'update', db.stats)
+    auth.add_permission(admin_group_id, 'delete', db.stats)
+
+    auth.add_permission(admin_group_id, 'create', db.cc_trigger)
+    auth.add_permission(admin_group_id, 'select', db.cc_trigger)
+    auth.add_permission(admin_group_id, 'read', db.cc_trigger)
+    auth.add_permission(admin_group_id, 'update', db.cc_trigger)
+    auth.add_permission(admin_group_id, 'delete', db.cc_trigger)
+
+    auth.add_permission(admin_group_id, 'create', db.cc_action)
+    auth.add_permission(admin_group_id, 'select', db.cc_action)
+    auth.add_permission(admin_group_id, 'read', db.cc_action)
+    auth.add_permission(admin_group_id, 'update', db.cc_action)
+    auth.add_permission(admin_group_id, 'delete', db.cc_action)
+
+    auth.add_permission(client_group_id, 'create', db.rate_sheet)
+    auth.add_permission(client_group_id, 'select', db.rate_sheet)
+    auth.add_permission(client_group_id, 'read', db.rate_sheet)
+    auth.add_permission(client_group_id, 'update', db.rate_sheet)
+    auth.add_permission(client_group_id, 'delete', db.rate_sheet)
+
+    auth.add_permission(client_group_id, 'create', db.rate)
+    auth.add_permission(client_group_id, 'select', db.rate)
+    auth.add_permission(client_group_id, 'read', db.rate)
+    auth.add_permission(client_group_id, 'update', db.rate)
+    auth.add_permission(client_group_id, 'delete', db.rate)
+
+    auth.add_permission(client_group_id, 'create', db.stats)
+    auth.add_permission(client_group_id, 'select', db.stats)
+    auth.add_permission(client_group_id, 'read', db.stats)
+    auth.add_permission(client_group_id, 'update', db.stats)
+    auth.add_permission(client_group_id, 'delete', db.stats)
+
+    auth.add_permission(client_group_id, 'create', db.cc_trigger)
+    auth.add_permission(client_group_id, 'select', db.cc_trigger)
+    auth.add_permission(client_group_id, 'read', db.cc_trigger)
+    auth.add_permission(client_group_id, 'update', db.cc_trigger)
+    auth.add_permission(client_group_id, 'delete', db.cc_trigger)
+
+    auth.add_permission(client_group_id, 'create', db.cc_action)
+    auth.add_permission(client_group_id, 'select', db.cc_action)
+    auth.add_permission(client_group_id, 'read', db.cc_action)
+    auth.add_permission(client_group_id, 'update', db.cc_action)
+    auth.add_permission(client_group_id, 'delete', db.cc_action)
+
+    auth.add_permission(reseller_group_id, 'create', db.client)
 
 def give_reseller_owner_permissions(form):
     reseller_id = form.vars.id

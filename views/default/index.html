@@ -10,13 +10,13 @@
 {{if auth.has_membership('admin'):}}
 <h1>Admin Section</h1>
 <a href="{{=URL('roles', 'manage_users')}}" class="btn btn-default btn-lg">
-    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Users
+    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> {{=T('Users')}}
 </a>
 <a href="{{=URL('default', 'resellers')}}" class="btn btn-default btn-lg">
-    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Resellers
+  <span class="glyphicon glyphicon-star" aria-hidden="true"></span> {{=T('Resellers')}}
 </a>
 <a href="{{=URL('default', 'clients')}}" class="btn btn-default btn-lg">
-    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Clients
+  <span class="glyphicon glyphicon-star" aria-hidden="true"></span> {{=T('Clients')}}
 </a>
 
 {{pass}}
@@ -24,14 +24,6 @@
 {{if auth.has_membership('reseller'):}}
 <h1>Reseller Section</h1>
 <a href="{{=URL('default', 'clients')}}" class="btn btn-default btn-lg">
-    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Clients
+  <span class="glyphicon glyphicon-star" aria-hidden="true"></span> {{=T('Clients')}}
 </a>
-{{pass}}
-
-{{if auth.has_membership('client'):}}
-<h1>Client Section</h1>
-<a href="{{=URL('default', 'rate_sheets')}}" class="btn btn-default btn-lg">
-    <span class="glyphicon glyphicon-star" aria-hidden="true"></span> Rate Sheets
-</a>
-
 {{pass}}

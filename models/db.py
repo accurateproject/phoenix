@@ -144,7 +144,7 @@ db._common_fields.append(auth.signature)
 
 db.define_table(
     'reseller',
-    Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
+    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('gateways', 'list:string', requires=IS_IPV4()),
@@ -153,8 +153,8 @@ db.define_table(
 
 db.define_table(
     'client',
-    Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
-    Field('reseller', 'reference reseller', comment='select the reseller'),
+    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
+    Field('reseller', 'reference reseller', comment=T('select the reseller')),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
     Field('nb_prefix', 'string', default=''),
@@ -165,20 +165,20 @@ db.define_table(
 
 db.define_table(
     'user_reseller',
-    Field('user_id', 'reference auth_user'),
-    Field('reseller_id', 'reference reseller'),
+    Field('user_id', 'reference auth_user', required=True),
+    Field('reseller_id', 'reference reseller', required=True),
 )
 
 db.define_table(
     'user_client',
-    Field('user_id', 'reference auth_user'),
-    Field('client_id', 'reference client'),
+    Field('user_id', 'reference auth_user', required=True),
+    Field('client_id', 'reference client', required=True),
 )
 
 db.define_table(
     'rate_sheet',
-    Field('client', 'reference client', comment='select the client'),
-    Field('name', 'string', unique=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
+    Field('client', 'reference client', comment=T('select the client')),
+    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'rate_sheet.name')]),
     Field('effective_date', 'datetime', default=request.now),
     Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
@@ -189,25 +189,75 @@ db.define_table(
 db.define_table(
     'rate',
     Field('sheet', 'reference rate_sheet', writable=False, readable=False),
-    Field('code', 'string', requires=IS_NOT_EMPTY()),
-    Field('code_name', 'string', requires=IS_NOT_EMPTY()),
-    Field('rate', 'double', requires=IS_NOT_EMPTY()),
-    Field('min_increment', 'integer', default=1, comment='min debit duration in seconds'),
+    Field('code', 'string', required=True,  requires=IS_NOT_EMPTY()),
+    Field('code_name', 'string', required=True, requires=IS_NOT_EMPTY()),
+    Field('rate', 'double', required=True, requires=IS_NOT_EMPTY()),
+    Field('min_increment', 'integer', default=1, comment=T('min debit duration in seconds')),
     Field('effective_date', 'datetime', default=request.now),
     format='%(code_name)s_%(code)s'
 )
+
+db.define_table(
+    'cc_action',
+    Field('name', 'string', required=True),
+    format='%(name)s'
+)
+
+db.define_table(
+    'cc_trigger',
+    Field('name', 'string', required=True),
+    format='%(name)s'
+)
+
+
+db.define_table(
+    'stats',
+    Field('client', 'reference client', required=True, readable=False, writable=False),
+    Field('queue_length', 'integer', required=True),
+    Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
+    Field('save_interval', 'string', default="60s", comment=T('save interval (s/m/h)')),
+    Field('metrics', 'list:string', requires=IS_IN_SET(('ASR', 'ACD', 'TCD', 'ACC', 'TCC', 'PDD', 'DDC'), multiple=True)),
+    Field('setup_interval', 'string', comment=T('cdr setup interval in seconds')),
+    Field('tors', 'list:string'),
+    Field('cdr_hosts', 'list:string'),
+    Field('cdr_sources', 'list:string'),
+    Field('req_types', 'list:string'),
+    Field('directions', 'list:string'),
+    Field('tenants', 'list:string', readable=False, writable=False),
+    Field('categories', 'list:string'),
+    Field('accounts', 'list:string', readable=False, writable=False),
+    Field('subjects', 'list:string'),
+    Field('destination_ids', 'list:string'),
+    Field('pdd_interval', 'string'),
+    Field('usage_interval', 'string'),
+    Field('suppliers', 'list:string'),
+    Field('disconnect_causes', 'list:string'),
+    Field('mediation_run_ids', 'list:string'),
+    Field('rated_accounts', 'list:string'),
+    Field('rated_subjects', 'list:string'),
+    Field('cost_interval', 'string'),
+    Field('triggers', 'list:reference cc_trigger'),
+)
+
+
 
 users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
     (db.reseller.id == db.user_reseller.reseller_id))
 users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
     (db.client.id == db.user_client.client_id))
 
-db.client.reseller.requires = IS_IN_DB(db((db.auth_user.id == db.user_reseller.user_id) &
-        (db.reseller.id == db.user_reseller.reseller_id) & (db.auth_user.id == auth.user_id) &
-        (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')
-db.rate_sheet.client.requires = IS_IN_DB(db((db.auth_user.id == db.user_client.user_id) &
-        (db.client.id == db.user_client.client_id) & (db.auth_user.id == auth.user_id) &
-        (db.client.status=='enabled')), db.client.id, '%(name)s')
+db.client.reseller.requires = IS_IN_DB(db(
+    (db.reseller.id == db.user_reseller.reseller_id) &
+    (auth.user_id == db.user_reseller.user_id) &
+    (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')
+db.rate_sheet.client.requires = IS_IN_DB(db(
+    (db.client.id == db.user_client.client_id) &
+    (auth.user_id == db.user_client.user_id) &
+    (db.client.status=='enabled')), db.client.id, '%(name)s')
+db.stats.client.requires = IS_IN_DB(db(
+    (db.client.id == db.user_client.client_id) &
+    (auth.user_id == db.user_client.user_id) &
+    (db.client.status=='enabled')), db.client.id, '%(name)s')
 
 
 def __check_rate_sheet(rate_sheet):
@@ -216,4 +266,12 @@ def __check_rate_sheet(rate_sheet):
     # check  it belongs to a ratesheet owned by the current user
     if db((db.user_client.user_id == auth.user_id) &
           (db.user_client.client_id == rate_sheet.client)).isempty():
+        raise HTTP(403, "Not authorized")
+
+def __check_stats(stats):
+    if not stats:
+        raise HTTP(404, "Not found")
+    # check  it belongs to a ratesheet owned by the current user
+    if db((db.user_client.user_id == auth.user_id) &
+          (db.user_client.client_id == stats.client)).isempty():
         raise HTTP(403, "Not authorized")

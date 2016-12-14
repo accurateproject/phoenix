@@ -40,18 +40,18 @@ def rate_sheet_to_tp(rs, rs_rates):
     results = {}
     results['Destinations'] = []
     for dest_id, prefixes in destinations.iteritems():
-        r = call('SetTPDestination', {'TPid': rs.name, 'DestinationId': dest_id, 'Prefixes': prefixes})
+        r = call('SetTPDestination', {'TPid': rs.name + "_tp", 'DestinationId': dest_id, 'Prefixes': prefixes})
         results['Destinations'].append(r)
 
     results['Rates'] = []
     for rate_id, rate in rates.iteritems():
-        r = call('SetTPRate', {'TPid': rs.name, 'RateId': rate_id,
+        r = call('SetTPRate', {'TPid': rs.name + "_tp", 'RateId': rate_id,
                 'RateSlots': [{'Rate': rate['rate'], 'RateUnit': '60s', 'RateIncrement': str(rate['min_increment']) + 's', 'GroupIntervalStart': '0s'}]})
         results['Rates'].append(r)
 
     results['DestinationRates'] = []
     for dest_id in destinations:
-        r = call('SetTPDestinationRate', {'TPid': rs.name, 'DestinationRateId': 'DR_' + dest_id,
+        r = call('SetTPDestinationRate', {'TPid': rs.name + "_tp", 'DestinationRateId': 'DR_' + dest_id,
                 'DestinationRates': [{'DestinationId': dest_id, 'RateId': 'RT_'+dest_id, 'RoundingMethod': '*up', 'RoundingDecimals': 6, 'MaxCost':0, 'MaxCostStrategy':''}]})
         results['DestinationRates'].append(r)
 
@@ -59,12 +59,13 @@ def rate_sheet_to_tp(rs, rs_rates):
     rating_plan_bindings = []
     for dest_id in destinations:
         rating_plan_bindings.append({'DestinationRatesId': 'DR_' + dest_id, 'TimingId': '*any', 'Weight': 10})
-    r = call('SetTPRatingPlan', {'TPid': rs.name, 'RatingPlanId': 'RP_' + rs.client.name, 'RatingPlanBindings': rating_plan_bindings})
+    r = call('SetTPRatingPlan', {'TPid': rs.name + "_tp", 'RatingPlanId': 'RP_' + rs.client.name, 'RatingPlanBindings': rating_plan_bindings})
     results['RatingPlans'].append(r)
 
     results['RatingProfiles'] = []
     direction = '*out' if rs.direction == 'outbound' else '*in'
-    r = call('SetTPRatingProfile', {'TPid': rs.name, 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'), 'Direction': direction, 'Tenant': rs.client.name,  'Category': 'call', 'Subject': '*any',
+    r = call('SetTPRatingProfile', {'TPid': rs.name + "_tp", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
+            'Direction': direction, 'Tenant': rs.client.reseller.name,  'Category': 'call', 'Subject': '*any',
             'RatingPlanActivations': [{'RatingPlanId': 'RP_' + rs.client.name, 'ActivationTime': '2010-01-01T00:00:00Z', 'FallbackSubjects': '', 'CdrStatQueueIds':''}]})
     results['RatingProfiles'].append(r)
 
@@ -73,6 +74,7 @@ def rate_sheet_to_tp(rs, rs_rates):
         response += key + '<br>'
         r = ''
         for result in result_list:
+            print result
             if result['result'] != 'OK':
                 r += 'result: %s error: %s <br>' % (result['result'], result['error'])
         if len(r) == 0:
@@ -80,14 +82,68 @@ def rate_sheet_to_tp(rs, rs_rates):
         response += r
     return response
 
-def activate_rate_sheet(rs):
-    r = call('LoadTariffPlanFromStorDb', {'TPid': rs.name, 'FlushDb': False, 'DryRun': False, 'Validate':True})
-    result = 'Activation<br>'
+def activate_tpid(tpid):
+    r = call('LoadTariffPlanFromStorDb', {'TPid': tpid, 'FlushDb': False, 'DryRun': False, 'Validate':True})
+    result = tpid + ' activation<br>'
     if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (result['result'], result['error'])
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
     return result
 
-def activate_client():
-    pass
+def account_to_tp(rs):
+    r = call('SetTPAccountActions', {'TPid': rs.name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
+            'Tenant': rs.client.reseller.name, 'Account': rs.client.name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
+    result = 'Account activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+    r = call('SetTPUser', {'TPid': rs.name + "_acc", 'Tenant': rs.client.reseller.name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
+                           'Profile':[
+                               {'AttrName': 'Account', 'AttrValue': rs.client.name},
+                               {'AttrName': 'Subject', 'AttrValue': 'process:~subject:s/^%s(\d+)/${1}/' % rs.client.nb_prefix},
+                               {'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)},
+                               {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
+                               {'AttrName': 'direction', 'AttrValue': rs.direction},
+                           ],
+    })
+    result += 'User activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+    return result
+
+def stats_to_tp(client, stats):
+    cdr_stats = []
+    for st in stats:
+       cdr_stats.append({'QueueLength': str(st.queue_length), 'TimeWindow': str(st.time_window), 'SaveInterval': str(st.save_interval), 'Metrics': ';'.join(st.metrics),
+        'SetupInterval': str(st.setup_interval), 'TORs': ';'.join(st.tors), 'CdrHosts': ';'.join(st.cdr_hosts), 'CdrSources': ';'.join(st.cdr_sources),
+        'ReqTypes': ';'.join(st.req_types), 'Directions': ';'.join(st.directions), 'Tenants': ';'.join(st.tenants), 'Categories': ';'.join(st.categories),
+        'Accounts': ';'.join(st.accounts), 'Subjects': ';'.join(st.subjects), 'DestinationIds': ';'.join(st.destination_ids),
+        'PddInterval': st.pdd_interval, 'UsageInterval': st.usage_interval, 'Suppliers': ';'.join(st.suppliers), 'DisconnectCauses': ';'.join(st.disconnect_causes),
+        'MediationRunIds': ';'.join(st.mediation_run_ids), 'RatedAccounts': ';'.join(st.rated_accounts),
+        'RatedSubject': ';'.join(st.rated_subjects), 'CostInterval': st.cost_interval, 'ActionTriggers': ';'.join(st.triggers)})
+
+    r = call('SetTPCdrStats', {'TPid': client.name + "_stats", 'CdrStatsId': '%s_CDRSAT_%s' % (client.reseller.name, client.name), "CdrStats": cdr_stats})
+    result = 'Stats activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+    #r = call('SetTPUser', {'TPid': rs.name + "_acc", 'Tenant': rs.client.reseller.name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
+    #                       'Profile':[
+    #                           {'AttrName': 'Account', 'AttrValue': rs.client.name},
+    #                           {'AttrName': 'Subject', 'AttrValue': 'process:~subject:s/^%s(\d+)/${1}/' % rs.client.nb_prefix},
+    #                           {'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)},
+    #                           {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
+    #                           {'AttrName': 'direction', 'AttrValue': rs.direction},
+    #                       ],
+    #})
+    #result += 'User activation<br>'
+    #if r['result'] != 'OK':
+    #    result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    #else:
+    #    result += 'OK<br>'
+    return result

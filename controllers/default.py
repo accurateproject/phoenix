@@ -7,6 +7,8 @@ crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
 
 @auth.requires_login()
 def index():
+    if not auth.has_membership('admin') and not auth.has_membership('reseller') and auth.has_membership('client'):
+        redirect(URL('default', 'clients'))
     return dict()
 
 @auth.requires_membership('admin')
@@ -16,32 +18,26 @@ def resellers():
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
-@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller'))
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller') or auth.has_membership('client'))
 def clients():
-    form = crud.update(db.client, request.args(0), onaccept=give_client_owner_permissions)
+    form = None
+    if auth.has_membership('admin') or auth.has_membership('reseller'):
+        form = crud.update(db.client, request.args(0), onaccept=give_client_owner_permissions)
     query = auth.accessible_query('read', db.client, auth.user.id)
     clients = db(query).select()
     return dict(form=form, clients=clients)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():
-    form = crud.update(db.rate_sheet, request.args(0))
-    rate_sheets = db(db.user_client.user_id == auth.user_id).select(
-                         join=db.user_client.on(db.rate_sheet.client == db.user_client.client_id),
-                         groupby=db.rate_sheet.id)
-    return dict(form=form, rate_sheets=rate_sheets)
-
-@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def client_rate_sheets():
     client_id=request.args(0) or redirect('index')
     client = db.client[client_id] or redirect('index')
     if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
         redirect(URL('user', 'not_autorized'))
-    db.rate_sheet.client.default = client_id
+    db.rate_sheet.client.default = client.id
     db.rate_sheet.client.readable = False
     db.rate_sheet.client.writable = False
-    form = crud.update(db.rate_sheet, request.args(1))
-    rate_sheets = db(db.rate_sheet.client == client_id).select()
+    form = crud.update(db.rate_sheet, request.args(1), next=URL('default', 'rate_sheets', args=client.id))
+    rate_sheets = db(db.rate_sheet.client == client.id).select()
     return dict(form=form, rate_sheets=rate_sheets, client=client)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
@@ -76,6 +72,30 @@ def rates():
     rates = db(db.rate.sheet == rate_sheet_id).select()
     return dict(form=form, rate_sheet=rate_sheet, rates=rates)
 
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def stats():
+    client_id = request.args(0) or redirect('index')
+    client = db.client[client_id] or redirect(URL('default', 'index'))
+    stats_id = request.args(1)
+    if stats_id is not None:
+        stats = db.stats[stats_id]
+        __check_stats(stats)
+    db.stats.tenants.default = [client.reseller.name]
+    db.stats.accounts.default = [client.name]
+    db.stats.client.default = client.id
+    form = crud.update(db.stats, request.args(1), next=URL('default', 'stats', args=client.id))
+    stats = db((db.user_client.user_id == auth.user_id) & (db.stats.client == client.id)).select(
+                         join=db.user_client.on(db.stats.client == db.user_client.client_id),
+                         groupby=db.stats.id)
+    return dict(form=form, client=client, stats=stats)
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def triggers():
+    pass
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def actions():
+    pass
 
 
 
