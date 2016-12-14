@@ -228,7 +228,7 @@ db.define_table(
     Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
     Field('save_interval', 'string', default="60s", comment=T('save interval (s/m/h)')),
     Field('metrics', 'list:string', requires=IS_IN_SET(('ASR', 'ACD', 'TCD', 'ACC', 'TCC', 'PDD', 'DDC'), multiple=True)),
-    Field('setup_interval', 'string', comment=T('cdr setup interval in seconds')),
+    Field('setup_interval', 'string', comment=T('cdr setup interval (start;end)')),
     Field('tors', 'list:string'),
     Field('cdr_hosts', 'list:string'),
     Field('cdr_sources', 'list:string'),

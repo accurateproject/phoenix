@@ -4,7 +4,13 @@ def status():
     return raccurate.call("Responder.Status")
 
 def accounts():
-    return accurate.call("GetAccounts",  dict(tenant = 'Generator'))
+    return accurate.call("GetAccounts",  dict(tenant = 'R1'))
+
+def queueids():
+    return accurate.call("CDRStatsV1.GetQueueIds")
+
+def metrics():
+    return accurate.call("CDRStatsV1.GetMetrics", dict(StatsQueueId = 'ST_C3_1'))
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def activate_rate_sheet():

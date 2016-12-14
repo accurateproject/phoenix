@@ -26,7 +26,7 @@
       <td>{{=rate_sheet.status}}</td>
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
-	  {{=A(T('edit'), _href=URL('default', 'client_rate_sheets', args=(client.id, rate_sheet.id)), _class="btn btn-link")}}
+	  {{=A(T('edit'), _href=URL('default', 'rate_sheets', args=(client.id, rate_sheet.id)), _class="btn btn-link")}}
 	  {{=A(T('rates'), _href=URL('default', 'rates', args=rate_sheet.id), _class="btn btn-link")}}
 	  {{=A(T('import'), _href=URL('default', 'rate_sheet_import', args=rate_sheet.id), _class="btn btn-link")}}
 	  {{=A(T('activate'), _href=URL('engine', 'activate_rate_sheet', args=rate_sheet.id), _class="btn btn-danger")}}

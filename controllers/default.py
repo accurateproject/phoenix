@@ -21,11 +21,21 @@ def resellers():
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller') or auth.has_membership('client'))
 def clients():
     form = None
+    show_form = False
     if auth.has_membership('admin') or auth.has_membership('reseller'):
         form = crud.update(db.client, request.args(0), onaccept=give_client_owner_permissions)
+        show_form = True
+    else: # only edits
+        client_id = request.args(0)
+        if client_id:
+            show_form = True
+            client = db.client[client_id]
+            db.client.reseller.readable = False
+            db.client.reseller.writable = False
+            form = crud.update(db.client, client_id, onaccept=give_client_owner_permissions)
     query = auth.accessible_query('read', db.client, auth.user.id)
     clients = db(query).select()
-    return dict(form=form, clients=clients)
+    return dict(form=form, show_form=show_form, clients=clients)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():

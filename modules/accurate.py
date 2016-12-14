@@ -123,7 +123,7 @@ def stats_to_tp(client, actions, triggers, stats):
         if action_tag not in action_dict:
             action_dict[action_tag] = []
         action_dict[action_tag].append({
-            'Identifier': action.action_type,
+            'Identifier': '*'+action.action_type,
         })
     for action_tag, action_body in action_dict.iteritems():
         r = call('SetTPActions', {'TPid': client.name + "_stats", 'ActionsId': action_tag, "Actions": action_body})
@@ -140,7 +140,7 @@ def stats_to_tp(client, actions, triggers, stats):
         if trigger_tag not in trigger_dict:
             trigger_dict[trigger_tag] = []
         trigger_dict[trigger_tag].append({
-            'ThresholdType': trigger.threshold_type,
+            'ThresholdType': '*'+trigger.threshold_type,
 	    'ThresholdValue': trigger.threshold_value,
 	    'Recurrent': trigger.recurrent,
 	    'MinSleep': trigger.min_sleep,
@@ -148,7 +148,6 @@ def stats_to_tp(client, actions, triggers, stats):
 	    'ActionsId': trigger.act.name,
         })
     for trigger_tag, trigger_body in trigger_dict.iteritems():
-        print trigger_body
         r = call('SetTPActionTriggers', {'TPid': client.name + "_stats", 'ActionTriggersId': trigger_tag, "ActionTriggers": trigger_body})
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
