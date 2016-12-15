@@ -94,7 +94,7 @@ def cdrs():
     elif form.errors:
         response.flash = 'form has errors'
 
-    if len(request.args): page=int(request.args[0])s
+    if len(request.args): page=int(request.args[0])
     else: page=0
     items_per_page=20
     params['offset'], params['limit'] = page*items_per_page, (page+1)*items_per_page+1
@@ -113,11 +113,12 @@ def activate_rate_sheet():
     rate_sheet = db.rate_sheet[rate_sheet_id]
     __check_rate_sheet(rate_sheet)
     rs_rates = db(db.rate.sheet == rate_sheet.id).select()
+    rs_name = accurate.upper_under(rate_sheet.name)
 
     resp = accurate.rate_sheet_to_tp(rate_sheet, rs_rates)
     resp +=  accurate.account_to_tp(rate_sheet)
-    resp +=  accurate.activate_tpid(rate_sheet.name + "_tp")
-    resp +=  accurate.activate_tpid(rate_sheet.name + "_acc")
+    resp +=  accurate.activate_tpid(rs_name + "_tp")
+    resp +=  accurate.activate_tpid(rs_name + "_acc")
 
     rate_sheet.client.active_rate_sheet = rate_sheet.id
     rate_sheet.client.update_record()
@@ -131,11 +132,12 @@ def activate_stats():
     client = db.client[client_id]
     if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client.id) & (db.user_client.user_id == auth.user_id)).isempty():
         redirect(URL('user', 'not_autorized'))
+    client_name = accurate.upper_under(client.name)
 
     actions = db(db.act.client == client_id).select()
     triggers = db(db.action_trigger.client == client_id).select()
     stats = db(db.stats.client == client_id).select()
     resp = accurate.stats_to_tp(client, actions, triggers, stats)
-    resp +=  accurate.activate_tpid(client.name + "_stats")
+    resp +=  accurate.activate_tpid(client_name + "_stats")
     session.flash = XML(resp)
     redirect(request.env.http_referer)

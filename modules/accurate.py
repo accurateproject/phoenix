@@ -7,6 +7,9 @@ from gluon import current
 
 myconf = AppConfig(reload=False)
 
+def upper_under(text):
+    return text.upper().replace(' ', '_')
+
 def call(method, *args):
     method = 'ApierV2.' + method if '.' not in method else method
     try:
@@ -28,45 +31,48 @@ def call(method, *args):
 def rate_sheet_to_tp(rs, rs_rates):
     destinations = {}
     rates = {}
+    reseller_name = upper_under(rs.client.reseller.name)
+    client_name = upper_under(rs.client.name)
+    rs_name = upper_under(rs.name)
     for rate in rs_rates:
-        rate.code_name = rate.code_name.replace(' ', '_')
+        rate.code_name = upper_under(rate.code_name)
         if rate.code_name not in destinations:
             destinations[rate.code_name] = []
         if rate.code not in destinations[rate.code_name]:
             destinations[rate.code_name].append(rate.code)
-        rate_id = "RT_" + rate.code_name
+        rate_id = client_name + "_RT_" + rate.code_name
         rates[rate_id] = {"rate": rate.rate, "min_increment": rate.min_increment, }
 
     results = {}
     results['Destinations'] = []
     for dest_id, prefixes in destinations.iteritems():
-        r = call('SetTPDestination', {'TPid': rs.name + "_tp", 'DestinationId': dest_id, 'Prefixes': prefixes})
+        r = call('SetTPDestination', {'TPid': rs_name + "_tp", 'DestinationId': dest_id, 'Prefixes': prefixes})
         results['Destinations'].append(r)
 
     results['Rates'] = []
     for rate_id, rate in rates.iteritems():
-        r = call('SetTPRate', {'TPid': rs.name + "_tp", 'RateId': rate_id,
+        r = call('SetTPRate', {'TPid': rs_name + "_tp", 'RateId': rate_id,
                 'RateSlots': [{'Rate': rate['rate'], 'RateUnit': '60s', 'RateIncrement': str(rate['min_increment']) + 's', 'GroupIntervalStart': '0s'}]})
         results['Rates'].append(r)
 
     results['DestinationRates'] = []
     for dest_id in destinations:
-        r = call('SetTPDestinationRate', {'TPid': rs.name + "_tp", 'DestinationRateId': 'DR_' + dest_id,
-                'DestinationRates': [{'DestinationId': dest_id, 'RateId': 'RT_'+dest_id, 'RoundingMethod': '*up', 'RoundingDecimals': 6, 'MaxCost':0, 'MaxCostStrategy':''}]})
+        r = call('SetTPDestinationRate', {'TPid': rs_name + "_tp", 'DestinationRateId': client_name + '_DR_' + dest_id,
+                'DestinationRates': [{'DestinationId': dest_id, 'RateId': client_name + '_RT_'+dest_id, 'RoundingMethod': '*up', 'RoundingDecimals': 6, 'MaxCost':0, 'MaxCostStrategy':''}]})
         results['DestinationRates'].append(r)
 
     results['RatingPlans'] = []
     rating_plan_bindings = []
     for dest_id in destinations:
-        rating_plan_bindings.append({'DestinationRatesId': 'DR_' + dest_id, 'TimingId': '*any', 'Weight': 10})
-    r = call('SetTPRatingPlan', {'TPid': rs.name + "_tp", 'RatingPlanId': 'RP_' + rs.client.name, 'RatingPlanBindings': rating_plan_bindings})
+        rating_plan_bindings.append({'DestinationRatesId': client_name + '_DR_' + dest_id, 'TimingId': '*any', 'Weight': 10})
+    r = call('SetTPRatingPlan', {'TPid': rs_name + "_tp", 'RatingPlanId': client_name + '_RP_' + rs_name, 'RatingPlanBindings': rating_plan_bindings})
     results['RatingPlans'].append(r)
 
     results['RatingProfiles'] = []
-    direction = '*out' if rs.direction == 'outbound' else '*in'
-    r = call('SetTPRatingProfile', {'TPid': rs.name + "_tp", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Direction': direction, 'Tenant': rs.client.reseller.name,  'Category': 'call', 'Subject': '*any',
-            'RatingPlanActivations': [{'RatingPlanId': 'RP_' + rs.client.name, 'ActivationTime': '2010-01-01T00:00:00Z', 'FallbackSubjects': '', 'CdrStatQueueIds':''}]})
+    direction = '*out' #if rs.direction == 'outbound' else '*in'
+    r = call('SetTPRatingProfile', {'TPid': rs_name + "_tp", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
+            'Direction': direction, 'Tenant': reseller_name,  'Category': 'call', 'Subject': client_name,
+            'RatingPlanActivations': [{'RatingPlanId': client_name + '_RP_' + rs_name, 'ActivationTime': '2010-01-01T00:00:00Z', 'FallbackSubjects': '', 'CdrStatQueueIds':''}]})
     results['RatingProfiles'].append(r)
 
     response = ''
@@ -91,17 +97,20 @@ def activate_tpid(tpid):
     return result
 
 def account_to_tp(rs):
-    r = call('SetTPAccountActions', {'TPid': rs.name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Tenant': rs.client.reseller.name, 'Account': rs.client.name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
+    reseller_name = upper_under(rs.client.reseller.name)
+    client_name = upper_under(rs.client.name)
+    rs_name = upper_under(rs.name)
+    r = call('SetTPAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
+            'Tenant': rs.client.reseller.name, 'Account': rs_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
-    r = call('SetTPUser', {'TPid': rs.name + "_acc", 'Tenant': rs.client.reseller.name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
+    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
                            'Profile':[
-                               {'AttrName': 'Account', 'AttrValue': rs.client.name},
-                               {'AttrName': 'Subject', 'AttrValue': 'process:~subject:s/^%s(\d+)/${1}/' % rs.client.nb_prefix},
+                               {'AttrName': 'Account', 'AttrValue': rs_name},
+                               {'AttrName': 'Subject', 'AttrValue': client_name},
                                {'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)},
                                {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
                                {'AttrName': 'direction', 'AttrValue': rs.direction},
