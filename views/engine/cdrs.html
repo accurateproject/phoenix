@@ -1,9 +1,18 @@
 {{extend 'layout.html'}}
 
 <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#form">{{=T('Filter')}}</button>
-<div id="form" class="collapse {{if request.args(1):}}in{{pass}}">
+<div id="form" class="collapse">
   {{=form}}
 </div>
+
+{{if params:}}
+<h4>{{=T('Filters')}}</h4>
+<ul>
+  {{for key, value in params.iteritems():}}
+  <li>{{=key}}: {{=value}}</li>
+  {{pass}}
+</ul>
+{{pass}}
 
 <table class="table">
   <thead>
@@ -48,17 +57,17 @@
       <td>{{=cdr['PDD']}}</td>
       <td>{{=cdr['Usage']}}</td>
       <td>{{=cdr['DisconnectCause']}}</td>
-      <td>{{=cdr['ExtraFields']}}</td>
       <td>{{=cdr['Cost']}}</td>
+      <td>{{=cdr['ExtraFields']}}</td>
       <td>{{=cdr['CostDetails']}}</td>
     </tr>
     {{pass}}
   </tbody>
 </table>
 {{if page:}}
-<a href="{{=URL(args=[page-1])}}">previous</a>
+<a href="{{=URL(args=[client.id, page-1])}}">previous</a>
 {{pass}}
 
 {{if len(cdrs)>items_per_page:}}
-<a href="{{=URL(args=[page+1])}}">next</a>
+<a href="{{=URL(args=[client.id, page+1])}}">next</a>
 {{pass}}

@@ -20,6 +20,11 @@ def metrics():
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def cdrs():
+    client_id = request.args(0)
+    if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
+        redirect(URL('user', 'not_autorized'))
+    client = db.client[client_id] or redirect(URL('user', 'not_autorized'))
+
     #session.forget(response)
     field_dict = OrderedDict()
     field_dict['cgr_ids'] = 'list:string'
@@ -30,20 +35,14 @@ def cdrs():
     field_dict['not_origin_hosts'] = 'list:string'
     field_dict['sources'] = 'list:string'
     field_dict['not_sources'] = 'list:string'
-    field_dict['tors'] = 'list:string'
-    field_dict['not_tors'] = 'list:string'
-    field_dict['request_types'] = 'list:string'
-    field_dict['not_request_types'] = 'list:string'
-    field_dict['directions'] = 'list:string'
-    field_dict['not_directions'] = 'list:string'
-    field_dict['tenants'] = 'list:string'
-    field_dict['not_tenants'] = 'list:string'
-    field_dict['categories'] = 'list:string'
-    field_dict['not_categories'] = 'list:string'
-    field_dict['accounts'] = 'list:string'
-    field_dict['not_accounts'] = 'list:string'
-    field_dict['subjects'] = 'list:string'
-    field_dict['not_subjects'] = 'list:string'
+    #field_dict['tors'] = 'list:string'
+    #field_dict['not_tors'] = 'list:string'
+    #field_dict['request_types'] = 'list:string'
+    #field_dict['not_request_types'] = 'list:string'
+    #field_dict['directions'] = 'list:string'
+    #field_dict['not_directions'] = 'list:string'
+    #field_dict['categories'] = 'list:string'
+    #field_dict['not_categories'] = 'list:string'
     field_dict['destination_prefixes'] = 'list:string'
     field_dict['not_destination_prefixes'] = 'list:string'
     field_dict['suppliers'] = 'list:string'
@@ -70,6 +69,13 @@ def cdrs():
     field_dict['max_pdd'] = 'string'
     field_dict['min_cost'] = 'float'
     field_dict['max_cost'] = 'float'
+    if auth.has_membership('admin'):
+        field_dict['tenants'] = 'list:string'
+        field_dict['not_tenants'] = 'list:string'
+        field_dict['accounts'] = 'list:string'
+        field_dict['not_accounts'] = 'list:string'
+        field_dict['subjects'] = 'list:string'
+        field_dict['not_subjects'] = 'list:string'
 
     params = {}
     fields = []
@@ -94,18 +100,31 @@ def cdrs():
     elif form.errors:
         response.flash = 'form has errors'
 
-    if len(request.args): page=int(request.args[0])
-    else: page=0
-    items_per_page=20
+    page = int(request.args(1)) if request.args(1) else 0
+    items_per_page=myconf.get('accurate.items_per_page')
+
     params['offset'], params['limit'] = page*items_per_page, (page+1)*items_per_page+1
 
+    if not auth.has_membership('admin'):
+        params['tenants'] = [client.reseller.name]
+        params['accounts'] = [client.name]
+        params['subjects'] = [client.name]
+
+    print params
     cdrs = []
     r = accurate.call("GetCdrs",  params)
     if r['error']:
         response.flash = r['error']
     else:
         cdrs = r['result']
-    return dict(form=form, cdrs=cdrs, page=page,items_per_page=items_per_page)
+
+    # prepare the params for show
+    del params['tenants']
+    del params['subjects']
+    del params['accounts']
+    del params['limit']
+    del params['offset']
+    return dict(form=form, cdrs=cdrs, page=page, items_per_page=items_per_page, client=client, params=params)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def activate_rate_sheet():

@@ -101,7 +101,7 @@ def account_to_tp(rs):
     client_name = upper_under(rs.client.name)
     rs_name = upper_under(rs.name)
     r = call('SetTPAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Tenant': rs.client.reseller.name, 'Account': rs_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
+            'Tenant': reseller_name, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
@@ -109,7 +109,7 @@ def account_to_tp(rs):
         result += 'OK<br>'
     r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
                            'Profile':[
-                               {'AttrName': 'Account', 'AttrValue': rs_name},
+                               {'AttrName': 'Account', 'AttrValue': client_name},
                                {'AttrName': 'Subject', 'AttrValue': client_name},
                                {'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)},
                                {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
