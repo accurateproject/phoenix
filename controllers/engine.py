@@ -1,16 +1,111 @@
 import accurate
+import json
+from collections import OrderedDict
 
 def status():
+    session.forget(response)
     return raccurate.call("Responder.Status")
 
 def accounts():
+    session.forget(response)
     return accurate.call("GetAccounts",  dict(tenant = 'R1'))
 
 def queueids():
+    session.forget(response)
     return accurate.call("CDRStatsV1.GetQueueIds")
 
 def metrics():
+    session.forget(response)
     return accurate.call("CDRStatsV1.GetMetrics", dict(StatsQueueId = 'ST_C3_1'))
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def cdrs():
+    #session.forget(response)
+    field_dict = OrderedDict()
+    field_dict['cgr_ids'] = 'list:string'
+    field_dict['not_cgr_ids'] = 'list:string'
+    field_dict['run_ids'] = 'list:string'
+    field_dict['not_run_ids'] = 'list:string'
+    field_dict['origin_hosts'] = 'list:string'
+    field_dict['not_origin_hosts'] = 'list:string'
+    field_dict['sources'] = 'list:string'
+    field_dict['not_sources'] = 'list:string'
+    field_dict['tors'] = 'list:string'
+    field_dict['not_tors'] = 'list:string'
+    field_dict['request_types'] = 'list:string'
+    field_dict['not_request_types'] = 'list:string'
+    field_dict['directions'] = 'list:string'
+    field_dict['not_directions'] = 'list:string'
+    field_dict['tenants'] = 'list:string'
+    field_dict['not_tenants'] = 'list:string'
+    field_dict['categories'] = 'list:string'
+    field_dict['not_categories'] = 'list:string'
+    field_dict['accounts'] = 'list:string'
+    field_dict['not_accounts'] = 'list:string'
+    field_dict['subjects'] = 'list:string'
+    field_dict['not_subjects'] = 'list:string'
+    field_dict['destination_prefixes'] = 'list:string'
+    field_dict['not_destination_prefixes'] = 'list:string'
+    field_dict['suppliers'] = 'list:string'
+    field_dict['not_suppliers'] = 'list:string'
+    field_dict['disconnect_causes'] = 'list:string'
+    field_dict['not_disconnect_causes'] = 'list:string'
+    field_dict['costs'] = 'list:string'
+    field_dict['not_costs'] = 'list:string'
+    field_dict['extra_fields'] = 'string'
+    field_dict['not_extra_fields'] = 'string'
+    field_dict['order_id_start'] = 'integer'
+    field_dict['order_id_end'] = 'integer'
+    field_dict['setup_time_start'] = 'string'
+    field_dict['setup_time_end'] = 'string'
+    field_dict['answer_time_start'] = 'string'
+    field_dict['answer_time_end'] = 'string'
+    field_dict['created_at_start'] = 'string'
+    field_dict['created_at_end'] = 'string'
+    field_dict['updated_at_start'] = 'string'
+    field_dict['updated_at_end'] = 'string'
+    field_dict['min_usage'] = 'string'
+    field_dict['max_usage'] = 'string'
+    field_dict['min_pdd'] = 'string'
+    field_dict['max_pdd'] = 'string'
+    field_dict['min_cost'] = 'float'
+    field_dict['max_cost'] = 'float'
+
+    params = {}
+    fields = []
+    for key, value in field_dict.iteritems():
+        field = (key,value)
+        fields.append(Field(*field))
+    form=SQLFORM.factory(*fields, formstyle='table3cols')
+    if form.process().accepted:
+        for key, value in form.vars.iteritems():
+            if field_dict[key] == 'list:string' and value != '':
+                if isinstance(value, basestring):
+                    params[key.replace('_','')] = [value]
+                else:
+                    params[key.replace('_','')] = value
+                continue
+            if key in ('extra_fields', 'not_extra_fields') and value != '':
+                params[key.replace('_','')] = json.loads(value)
+                continue
+            if field_dict[key] in ('integer', 'float', 'string') and value != '':
+                params[key.replace('_','')] = value
+                continue
+    elif form.errors:
+        response.flash = 'form has errors'
+
+    if len(request.args): page=int(request.args[0])s
+    else: page=0
+    items_per_page=20
+    params['offset'], params['limit'] = page*items_per_page, (page+1)*items_per_page+1
+
+    cdrs = []
+    r = accurate.call("GetCdrs",  params)
+    if r['error']:
+        response.flash = r['error']
+    else:
+        cdrs = r['result']
+    return dict(form=form, cdrs=cdrs, page=page,items_per_page=items_per_page)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def activate_rate_sheet():
@@ -19,14 +114,15 @@ def activate_rate_sheet():
     __check_rate_sheet(rate_sheet)
     rs_rates = db(db.rate.sheet == rate_sheet.id).select()
 
-    response = accurate.rate_sheet_to_tp(rate_sheet, rs_rates)
-    response +=  accurate.account_to_tp(rate_sheet)
-    response +=  accurate.activate_tpid(rate_sheet.name + "_tp")
-    response +=  accurate.activate_tpid(rate_sheet.name + "_acc")
+    resp = accurate.rate_sheet_to_tp(rate_sheet, rs_rates)
+    resp +=  accurate.account_to_tp(rate_sheet)
+    resp +=  accurate.activate_tpid(rate_sheet.name + "_tp")
+    resp +=  accurate.activate_tpid(rate_sheet.name + "_acc")
 
     rate_sheet.client.active_rate_sheet = rate_sheet.id
     rate_sheet.client.update_record()
-    return response
+    session.flash = XML(resp)
+    redirect(request.env.http_referer)
 
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
@@ -39,7 +135,7 @@ def activate_stats():
     actions = db(db.act.client == client_id).select()
     triggers = db(db.action_trigger.client == client_id).select()
     stats = db(db.stats.client == client_id).select()
-    response = accurate.stats_to_tp(client, actions, triggers, stats)
-    response +=  accurate.activate_tpid(client.name + "_stats")
-
-    return response
+    resp = accurate.stats_to_tp(client, actions, triggers, stats)
+    resp +=  accurate.activate_tpid(client.name + "_stats")
+    session.flash = XML(resp)
+    redirect(request.env.http_referer)

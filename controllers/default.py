@@ -123,8 +123,6 @@ def actions():
     actions = db(db.act.client == client.id).select()
     return dict(form=form, client=client, actions=actions)
 
-
-
 def user():
     """
     exposes:

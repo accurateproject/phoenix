@@ -1,0 +1,64 @@
+{{extend 'layout.html'}}
+
+<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#form">{{=T('Filter')}}</button>
+<div id="form" class="collapse {{if request.args(1):}}in{{pass}}">
+  {{=form}}
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>{{=T('CgrId')}}</th>
+      <th>{{=T('RunId')}}</th>
+      <th>{{=T('OrderID')}}</th>
+      <th>{{=T('OriginHost')}}</th>
+      <th>{{=T('Source')}}</th>
+      <th>{{=T('OriginID')}}</th>
+      <th>{{=T('Tenant')}}</th>
+      <th>{{=T('Account')}}</th>
+      <th>{{=T('Subject')}}</th>
+      <th>{{=T('Destination')}}</th>
+      <th>{{=T('SetupTime')}}</th>
+      <th>{{=T('AnswerTime')}}</th>
+      <th>{{=T('PDD')}}</th>
+      <th>{{=T('Usage')}}</th>
+      <th>{{=T('DisconnectCause')}}</th>
+      <th>{{=T('Cost')}}</th>
+      <th>{{=T('ExtraFields')}}</th>
+      <th>{{=T('CostDetails')}}</th>
+      <th>{{=T('')}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{for i,cdr in enumerate(cdrs):}}
+    {{if i==items_per_page: break}}
+    <tr>
+      <td>{{=cdr['CGRID']}}</td>
+      <td>{{=cdr['RunID']}}</td>
+      <td>{{=cdr['OrderID']}}</td>
+      <td>{{=cdr['OriginHost']}}</td>
+      <td>{{=cdr['Source']}}</td>
+      <td>{{=cdr['OriginID']}}</td>
+      <td>{{=cdr['Tenant']}}</td>
+      <td>{{=cdr['Account']}}</td>
+      <td>{{=cdr['Subject']}}</td>
+      <td>{{=cdr['Destination']}}</td>
+      <td>{{=cdr['SetupTime']}}</td>
+      <td>{{=cdr['AnswerTime']}}</td>
+      <td>{{=cdr['PDD']}}</td>
+      <td>{{=cdr['Usage']}}</td>
+      <td>{{=cdr['DisconnectCause']}}</td>
+      <td>{{=cdr['ExtraFields']}}</td>
+      <td>{{=cdr['Cost']}}</td>
+      <td>{{=cdr['CostDetails']}}</td>
+    </tr>
+    {{pass}}
+  </tbody>
+</table>
+{{if page:}}
+<a href="{{=URL(args=[page-1])}}">previous</a>
+{{pass}}
+
+{{if len(cdrs)>items_per_page:}}
+<a href="{{=URL(args=[page+1])}}">next</a>
+{{pass}}
