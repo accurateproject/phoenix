@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import uuid
 
 # -------------------------------------------------------------------------
 # This scaffolding model makes your app work on Google App Engine too
@@ -90,6 +91,11 @@ from gluon.tools import Auth, Service, PluginManager
 auth = Auth(db, host_names=myconf.get('host.names'))
 service = Service()
 #plugins = PluginManager()
+
+from gluon.tools import Crud
+crud = Crud(db)
+crud.settings.auth = auth
+crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
 
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
@@ -256,14 +262,21 @@ db.define_table(
     Field('rated_subjects', 'list:string'),
     Field('cost_interval', 'string'),
     Field('triggers', 'list:string'),
+    format='%(name)s'
 )
 
 db.define_table(
     'invoice',
     Field('statement_no', 'string', required=True, requires=IS_NOT_EMPTY()),
+    Field('uuid', 'string', readable=False, writable=False, default=lambda:str(uuid.uuid4())),
     Field('client', 'reference client', required=True, readable=False, writable=False),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
-    Field('content', 'text'),
+    Field('start_date', 'datetime'),
+    Field('end_date', 'datetime'),
+    Field('due_date', 'datetime'),
+    Field('paid', 'boolean'),
+    Field('body', 'text'),
+    format='%(statement_no)s'
 )
 
 users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &

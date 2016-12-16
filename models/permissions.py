@@ -58,6 +58,12 @@ def initialize_permissions():
     auth.add_permission(admin_group_id, 'update', db.act)
     auth.add_permission(admin_group_id, 'delete', db.act)
 
+    auth.add_permission(admin_group_id, 'create', db.invoice)
+    auth.add_permission(admin_group_id, 'select', db.invoice)
+    auth.add_permission(admin_group_id, 'read', db.invoice)
+    auth.add_permission(admin_group_id, 'update', db.invoice)
+    auth.add_permission(admin_group_id, 'delete', db.invoice)
+
     auth.add_permission(client_group_id, 'create', db.rate_sheet)
     auth.add_permission(client_group_id, 'select', db.rate_sheet)
     auth.add_permission(client_group_id, 'read', db.rate_sheet)
@@ -87,6 +93,12 @@ def initialize_permissions():
     auth.add_permission(client_group_id, 'read', db.act)
     auth.add_permission(client_group_id, 'update', db.act)
     auth.add_permission(client_group_id, 'delete', db.act)
+
+    auth.add_permission(client_group_id, 'create', db.invoice)
+    auth.add_permission(client_group_id, 'select', db.invoice)
+    auth.add_permission(client_group_id, 'read', db.invoice)
+    auth.add_permission(client_group_id, 'update', db.invoice)
+    auth.add_permission(client_group_id, 'delete', db.invoice)
 
     auth.add_permission(reseller_group_id, 'create', db.client)
 

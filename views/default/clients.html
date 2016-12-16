@@ -18,7 +18,12 @@
       <th>{{=T('Time Zone')}}</th>
       <th>{{=T('Prefix')}}</th>
       <th>{{=T('Status')}}</th>
+      <th>{{=T('Invoice period')}}</th>
+      <th>{{=T('Payment period')}}</th>
       <th>{{=T('Active rate sheet')}}</th>
+      <th>{{=T('Tax ID')}}</th>
+      <th>{{=T('Reg ID')}}</th>
+      <th>{{=T('Address')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
@@ -31,7 +36,12 @@
       <td>{{=client.time_zone}}</td>
       <td>{{=client.nb_prefix}}</td>
       <td>{{=client.status}}</td>
+      <td>{{=client.invoice_period}}</td>
+      <td>{{=client.payment_period}}</td>
       <td>{{=client.active_rate_sheet.name if client.active_rate_sheet else T('not set')}}</td>
+      <td>{{=client.tax_id}}</td>
+      <td>{{=client.reg_id}}</td>
+      <td>{{=client.address}}</td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL('default', 'clients', args=(client.reseller.id, client.id)), _class="btn btn-link")}}
@@ -40,6 +50,7 @@
           {{=A(T('triggers'), _href=URL('default', 'triggers', args=client.id), _class="btn btn-link")}}
           {{=A(T('actions'), _href=URL('default', 'actions', args=client.id), _class="btn btn-link")}}
           {{=A(T('CDRs'), _href=URL('engine', 'cdrs', args=client.id), _class="btn btn-link")}}
+	  {{=A(T('invoices'), _href=URL('accounting', 'invoices', args=client.id), _class="btn btn-link")}}
         </div>
       </td>
     </tr>

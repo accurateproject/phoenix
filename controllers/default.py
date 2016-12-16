@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from gluon.tools import Crud
-crud = Crud(db)
-crud.settings.auth = auth
-crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
-
 @auth.requires_login()
 def index():
     if auth.has_membership('admin'):
@@ -16,7 +11,7 @@ def index():
 @auth.requires_membership('admin')
 def resellers():
     form = crud.update(db.reseller, request.args(0), onaccept=give_reseller_owner_permissions)
-    query = auth.accessible_query('read', db.reseller, auth.user.id)
+    query = auth.accessible_query('read', db.reseller, auth.user_id)
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
@@ -34,7 +29,7 @@ def clients():
             client = db.client[client_id]
             form = crud.update(db.client, client_id, onaccept=give_client_owner_permissions)
 
-    query = auth.accessible_query('read', db.client, auth.user.id)
+    query = auth.accessible_query('read', db.client, auth.user_id)
     reseller_id = request.args(0)
     if reseller_id:
         db.client.reseller.default = reseller_id
