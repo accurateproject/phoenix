@@ -14,9 +14,19 @@ def queueids():
     session.forget(response)
     return accurate.call("CDRStatsV1.GetQueueIds")
 
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def metrics():
     session.forget(response)
-    return accurate.call("CDRStatsV1.GetMetrics", dict(StatsQueueId = 'ST_C3_1'))
+    client_id = request.args(0)
+    if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
+        redirect(URL('user', 'not_autorized'))
+    stats = db(db.stats.client == client_id).select(db.stats.name)
+    metrics = {}
+    for q in stats:
+        r = accurate.call("CDRStatsV1.GetMetrics", dict(StatsQueueId = q.name))
+        metrics[q.name] = r['error'] if r['error'] else r['result']
+
+    return metrics
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def cdrs():
@@ -25,7 +35,7 @@ def cdrs():
         redirect(URL('user', 'not_autorized'))
     client = db.client[client_id] or redirect(URL('user', 'not_autorized'))
 
-    #session.forget(response)
+
     field_dict = OrderedDict()
     field_dict['cgr_ids'] = 'list:string'
     field_dict['not_cgr_ids'] = 'list:string'
@@ -110,20 +120,20 @@ def cdrs():
         params['accounts'] = [client.name]
         params['subjects'] = [client.name]
 
-    print params
     cdrs = []
     r = accurate.call("GetCdrs",  params)
+
     if r['error']:
         response.flash = r['error']
     else:
         cdrs = r['result']
 
     # prepare the params for show
-    del params['tenants']
-    del params['subjects']
-    del params['accounts']
-    del params['limit']
-    del params['offset']
+    if 'tenants' in params: del params['tenants']
+    if 'subjects' in params: del params['subjects']
+    if 'accounts' in params: del params['accounts']
+    if 'limit' in params: del params['limit']
+    if 'offset' in params: del params['offset']
     return dict(form=form, cdrs=cdrs, page=page, items_per_page=items_per_page, client=client, params=params)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))

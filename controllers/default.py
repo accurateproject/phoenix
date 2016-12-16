@@ -7,7 +7,9 @@ crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
 
 @auth.requires_login()
 def index():
-    if not auth.has_membership('admin') and not auth.has_membership('reseller') and auth.has_membership('client'):
+    if auth.has_membership('admin'):
+        redirect(URL('default', 'resellers'))
+    if not auth.has_membership('admin') and (auth.has_membership('reseller') or auth.has_membership('client')):
         redirect(URL('default', 'clients'))
     return dict()
 
@@ -23,17 +25,22 @@ def clients():
     form = None
     show_form = False
     if auth.has_membership('admin') or auth.has_membership('reseller'):
-        form = crud.update(db.client, request.args(0), onaccept=give_client_owner_permissions)
+        form = crud.update(db.client, request.args(1), onaccept=give_client_owner_permissions)
         show_form = True
     else: # only edits
-        client_id = request.args(0)
+        client_id = request.args(1)
         if client_id:
             show_form = True
             client = db.client[client_id]
-            db.client.reseller.readable = False
-            db.client.reseller.writable = False
             form = crud.update(db.client, client_id, onaccept=give_client_owner_permissions)
+
     query = auth.accessible_query('read', db.client, auth.user.id)
+    reseller_id = request.args(0)
+    if reseller_id:
+        db.client.reseller.default = reseller_id
+        if not auth.has_membership(group_id='admin') and db((db.user_reseller.reseller_id == reseller_id) & (db.user_reseller.user_id == auth.user_id)).isempty():
+            redirect(URL('user', 'not_autorized'))
+        query = (db.client.reseller == reseller_id)
     clients = db(query).select()
     return dict(form=form, show_form=show_form, clients=clients)
 
@@ -44,8 +51,6 @@ def rate_sheets():
     if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
         redirect(URL('user', 'not_autorized'))
     db.rate_sheet.client.default = client.id
-    db.rate_sheet.client.readable = False
-    db.rate_sheet.client.writable = False
     form = crud.update(db.rate_sheet, request.args(1), next=URL('default', 'rate_sheets', args=client.id))
     rate_sheets = db(db.rate_sheet.client == client.id).select()
     return dict(form=form, rate_sheets=rate_sheets, client=client)
@@ -61,8 +66,8 @@ def rate_sheet_import():
     db.rate.sheet.default = rate_sheet_id
     form = FORM(INPUT(_type='file', _name='data'), INPUT(_type='submit'))
     if form.process().accepted:
-        rate_shee_reader = csv.reader(form.vars.data.file, delimiter=',', quotechar='"')
-        for row in rate_shee_reader:
+        rate_sheet_reader = csv.reader(form.vars.data.file, delimiter=',', quotechar='"')
+        for row in rate_sheet_reader:
             db.rate.update_or_insert((db.rate.code == row[0]) & (db.rate.sheet == rate_sheet_id),
                                      code = row[0],
                                      code_name = row[1],

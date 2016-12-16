@@ -148,18 +148,26 @@ db.define_table(
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('gateways', 'list:string', requires=IS_IPV4()),
+    Field('address', 'text'),
+    Field('tax_id', 'string'),
+    Field('reg_id', 'string'),
     format='%(name)s'
 )
 
 db.define_table(
     'client',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
-    Field('reseller', 'reference reseller', comment=T('select the reseller')),
+    Field('reseller', 'reference reseller', readable=False, writable=False),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
     Field('nb_prefix', 'string', default=''),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
-    Field('active_rate_sheet', 'reference rate_sheet', writable=False),
+    Field('active_rate_sheet', 'reference rate_sheet', readable=False, writable=False),
+    Field('address', 'text'),
+    Field('invoice_period', 'integer', required=True, requires=IS_INT_IN_RANGE(0, 100, error_message=T('too small or too large!'))),
+    Field('payment_period', 'integer', required=True, requires=IS_INT_IN_RANGE(0, 100, error_message=T('too small or too large!'))),
+    Field('tax_id', 'string'),
+    Field('reg_id', 'string'),
     format='%(name)s'
 )
 
@@ -177,7 +185,7 @@ db.define_table(
 
 db.define_table(
     'rate_sheet',
-    Field('client', 'reference client', comment=T('select the client')),
+    Field('client', 'reference client', comment=T('select the client'), readable=False, writable=False),
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'rate_sheet.name')]),
     Field('effective_date', 'datetime', default=request.now),
     Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
@@ -250,22 +258,19 @@ db.define_table(
     Field('triggers', 'list:string'),
 )
 
-
+db.define_table(
+    'invoice',
+    Field('statement_no', 'string', required=True, requires=IS_NOT_EMPTY()),
+    Field('client', 'reference client', required=True, readable=False, writable=False),
+    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    Field('content', 'text'),
+)
 
 users_and_resellers = db((db.auth_user.id == db.user_reseller.user_id) &
     (db.reseller.id == db.user_reseller.reseller_id))
 users_and_clients = db((db.auth_user.id == db.user_client.user_id) &
     (db.client.id == db.user_client.client_id))
 
-db.client.reseller.requires = IS_IN_DB(db(
-    (db.reseller.id == db.user_reseller.reseller_id) &
-    (auth.user_id == db.user_reseller.user_id) &
-    (db.reseller.status=='enabled')), db.reseller.id, '%(name)s')
-db.rate_sheet.client.requires = IS_IN_DB(db(
-    (db.client.id == db.user_client.client_id) &
-    (auth.user_id == db.user_client.user_id) &
-    (db.client.status=='enabled')), db.client.id, '%(name)s')
-db.stats.client.requires = IS_IN_DB(db(
-    (db.client.id == db.user_client.client_id) &
-    (auth.user_id == db.user_client.user_id) &
-    (db.client.status=='enabled')), db.client.id, '%(name)s')
+db.action_trigger.act.requires = IS_IN_DB(db(
+    (db.act.client == db.user_client.client_id) &
+    (auth.user_id == db.user_client.user_id)), db.act.id, '%(name)s')

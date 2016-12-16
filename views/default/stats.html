@@ -78,3 +78,75 @@
     {{pass}}
   </tbody>
 </table>
+
+<h2>{{=T('Graphs')}}</h2>
+
+{{for st in stats:}}
+{{for metric in st.metrics:}}
+<div style="float:left">
+<h3>{{=st.name + ' ' + metric}}</h3>
+<div class="flot-container">
+  <div id="{{=st.name + '_' + metric}}_placeholder" class="flot-placeholder"></div>
+</div>
+</div>
+{{pass}}
+{{pass}}
+
+{{block page_js}}
+<script type="text/javascript">
+
+ $(function() {
+
+   // We use an inline data source in the example, usually data would
+   // be fetched from a server
+   var updateInterval = 3500;
+
+   {{for st in stats:}}
+   {{for metric in st.metrics:}}
+   var data{{=st.name + '_' + metric}} = [],
+       totalPoints = 100;
+
+   function getData{{=st.name + '_' + metric}}() {
+
+     // Do a random walk
+     $.ajax({
+       url: "http://localhost:8000/engine/metrics.json/{{=client.id}}",
+       type: "GET",
+       dataType: "json",
+       success: function(queue) {
+	 if (data{{=st.name + '_' + metric}}.length > totalPoints)
+	   data{{=st.name + '_' + metric}} = data{{=st.name + '_' + metric}}.slice(1);
+	 data{{=st.name + '_' + metric}}.push(queue['{{=st.name}}']['{{=metric}}'] - Math.random()*10);
+	 // Zip the generated y values with the x values
+
+	 var res = [];
+	 for (var i = 0; i < data{{=st.name + '_' + metric}}.length; ++i) {
+	   res.push([i, data{{=st.name + '_' + metric}}[i]])
+	 }
+	 plot{{=st.name + '_' + metric}}.setData([{label:'{{=metric}}', data:res}]);
+
+	 // Since the axes don't change, we don't need to call plot.setupGrid()
+	 plot{{=st.name + '_' + metric}}.setupGrid();
+	 plot{{=st.name + '_' + metric}}.draw();
+       }
+     });
+     return ;
+   }
+
+   var plot{{=st.name + '_' + metric}} = $.plot("#{{=st.name + '_' + metric}}_placeholder", [ ], {
+     series: { shadowSize:0 },
+     yaxis: { min: 0, max: 100 },
+     xaxis: { show: false }
+   });
+
+   function update{{=st.name + '_' + metric}}() {
+     getData{{=st.name + '_' + metric}}();
+     setTimeout(update{{=st.name + '_' + metric}}, updateInterval);
+   }
+
+   update{{=st.name + '_' + metric}}();
+   {{pass}}
+   {{pass}}
+   });
+</script>
+{{end page_js}}

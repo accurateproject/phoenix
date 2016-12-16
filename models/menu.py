@@ -32,15 +32,7 @@ menu_items = [(T('Home'), False, URL('default', 'index'))]
 
 if auth.has_membership('admin'):
     menu_items.extend([
-        (T('Resellers'), False, URL('default', 'resellers')),
-        (T('Clients'), False, URL('default', 'clients')),
-        LI(_class="divider"),
         (T('Manage Users'), False, URL('roles', 'manage_users')),
-    ])
-
-if not auth.has_membership('admin') and auth.has_membership('reseller'):
-    menu_items.extend([
-        (T('Clients'), False, URL('default', 'clients')),
     ])
 
 response.menu = [
