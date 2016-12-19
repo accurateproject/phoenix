@@ -151,6 +151,7 @@ db._common_fields.append(auth.signature)
 db.define_table(
     'reseller',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
+    Field('unique_code', 'string', unique=True, required=True, length=4, requires=[IS_MATCH('\w{4}'), IS_NOT_IN_DB(db, 'reseller.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('gateways', 'list:string', requires=IS_IPV4()),
@@ -163,6 +164,7 @@ db.define_table(
 db.define_table(
     'client',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
+    Field('unique_code', 'string', unique=True, required=True, length=4, requires=[IS_MATCH('\w{4}'), IS_NOT_IN_DB(db, 'client.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
     Field('reseller', 'reference reseller', readable=False, writable=False),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
@@ -177,6 +179,7 @@ db.define_table(
     format='%(name)s'
 )
 
+
 db.define_table(
     'user_reseller',
     Field('user_id', 'reference auth_user', required=True),
@@ -189,10 +192,12 @@ db.define_table(
     Field('client_id', 'reference client', required=True),
 )
 
+
 db.define_table(
     'rate_sheet',
     Field('client', 'reference client', comment=T('select the client'), readable=False, writable=False),
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'rate_sheet.name')]),
+    Field('unique_code', 'string', unique=True, required=True, length=4, requires=[IS_MATCH('\w{4}'), IS_NOT_IN_DB(db, 'client.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
     Field('effective_date', 'datetime', default=request.now),
     Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),

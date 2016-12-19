@@ -31,8 +31,8 @@ def call(method, *args):
 def rate_sheet_to_tp(rs, rs_rates):
     destinations = {}
     rates = {}
-    reseller_name = upper_under(rs.client.reseller.name)
-    client_name = upper_under(rs.client.name)
+    reseller_name = rs.client.reseller.unique_code
+    client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
     for rate in rs_rates:
         rate.code_name = upper_under(rate.code_name)
@@ -97,8 +97,8 @@ def activate_tpid(tpid):
     return result
 
 def account_to_tp(rs):
-    reseller_name = upper_under(rs.client.reseller.name)
-    client_name = upper_under(rs.client.name)
+    reseller_name = rs.client.reseller.unique_code
+    client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
     r = call('SetTPAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
             'Tenant': reseller_name, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
@@ -107,7 +107,7 @@ def account_to_tp(rs):
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
-    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
+    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': client_name, 'Masked': False, 'Weight': 10,
                            'Profile':[
                                {'AttrName': 'Account', 'AttrValue': client_name},
                                {'AttrName': 'Subject', 'AttrValue': client_name},
@@ -135,7 +135,7 @@ def stats_to_tp(client, actions, triggers, stats):
             'Identifier': '*'+action.action_type,
         })
     for action_tag, action_body in action_dict.iteritems():
-        r = call('SetTPActions', {'TPid': client.name + "_stats", 'ActionsId': action_tag, "Actions": action_body})
+        r = call('SetTPActions', {'TPid': client.unique_code + "_stats", 'ActionsId': action_tag, "Actions": action_body})
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
             break
