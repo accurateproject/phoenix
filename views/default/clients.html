@@ -13,6 +13,7 @@
   <thead>
     <tr>
       <th>{{=T('Name')}}</th>
+      <th>{{=T('Unique code')}}</th>
       <th>{{=T('Reseller')}}</th>
       <th>{{=T('Currency')}}</th>
       <th>{{=T('Time Zone')}}</th>
@@ -31,6 +32,7 @@
     {{for client in clients:}}
     <tr>
       <td>{{=client.name}}</td>
+      <td>{{=client.unique_code}}</td>
       <td>{{=client.reseller.name}}</td>
       <td>{{=client.currency}}</td>
       <td>{{=client.time_zone}}</td>

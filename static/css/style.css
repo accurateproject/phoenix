@@ -33,3 +33,25 @@
 	font-size: 14px;
 	line-height: 1.2em;
 }
+
+h3.invoice-title {
+    border-bottom: 3px solid #ccc;
+}
+
+div.invoice-client-address {
+    border-left: 3px solid #ccc;
+}
+
+div.invoice-statement-for{
+    margin: 20px 0;
+}
+
+div.invoice {
+    font-family: "Times New Roman", Times, serif !important;
+}
+
+@media print {
+    .no-print, .no-print *, #socialdrawer {
+        display: none !important;
+    }
+}

@@ -180,7 +180,7 @@ def __check_stats(stats):
     # check  it belongs to a client owned by the current user
     if db(auth.accessible_query('read', db.client, auth.user_id) &
           (db.client.id == db.stats.client) &
-          (db.stats.id == stats.id)).is_empty():
+          (db.stats.id == stats.id)).isempty():
         raise HTTP(403, "Not authorized")
 
 def __check_trigger(trigger):

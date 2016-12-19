@@ -92,7 +92,7 @@ def cdrs():
     for key, value in field_dict.iteritems():
         field = (key,value)
         fields.append(Field(*field))
-    form=SQLFORM.factory(*fields, formstyle='table3cols')
+    form=SQLFORM.factory(*fields, formstyle='bootstrap3_stacked')
     if form.process().accepted:
         for key, value in form.vars.iteritems():
             if field_dict[key] == 'list:string' and value != '':
@@ -113,7 +113,7 @@ def cdrs():
     page = int(request.args(1)) if request.args(1) else 0
     items_per_page=myconf.get('accurate.items_per_page')
 
-    params['offset'], params['limit'] = page*items_per_page, (page+1)*items_per_page+1
+    params['offset'], params['limit'] = page*items_per_page, items_per_page+1
 
     if not auth.has_membership('admin'):
         params['tenants'] = [client.reseller.name]
@@ -159,7 +159,7 @@ def activate_rate_sheet():
 def activate_stats():
     client_id = request.args(0) or redirect('index')
     client = db.client[client_id]
-    if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client.id) & (db.user_client.user_id == auth.user_id)).isempty():
+    if not accessible_client(client_id):
         redirect(URL('user', 'not_autorized'))
     client_name = accurate.upper_under(client.name)
 

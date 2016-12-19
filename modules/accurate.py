@@ -178,18 +178,5 @@ def stats_to_tp(client, actions, triggers, stats):
             break
     result += partial_result
 
-    #r = call('SetTPUser', {'TPid': rs.name + "_acc", 'Tenant': rs.client.reseller.name, 'UserName': rs.client.name, 'Masked': False, 'Weight': 10,
-    #                       'Profile':[
-    #                           {'AttrName': 'Account', 'AttrValue': rs.client.name},
-    #                           {'AttrName': 'Subject', 'AttrValue': 'process:~subject:s/^%s(\d+)/${1}/' % rs.client.nb_prefix},
-    #                           {'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)},
-    #                           {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
-    #                           {'AttrName': 'direction', 'AttrValue': rs.direction},
-    #                       ],
-    #})
-    #result += 'User activation<br>'
-    #if r['result'] != 'OK':
-    #    result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    #else:
-    #    result += 'OK<br>'
+
     return result

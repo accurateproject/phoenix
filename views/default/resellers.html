@@ -1,4 +1,3 @@
-
 {{extend 'layout.html'}}
 
 <h1>{{=T('Resellers')}}</h1>
@@ -12,6 +11,7 @@
   <thead>
     <tr>
       <th>{{=T('Name')}}</th>
+      <th>{{=T('Unique code')}}</th>
       <th>{{=T('Currency')}}</th>
       <th>{{=T('Status')}}</th>
       <th>{{=T('Gateways')}}</th>
@@ -25,6 +25,7 @@
     {{for reseller in resellers:}}
     <tr>
       <td>{{=reseller.name}}</td>
+      <td>{{=reseller.unique_code}}</td>
       <td>{{=reseller.currency}}</td>
       <td>{{=reseller.status}}</td>
       <td>{{=reseller.gateways}}</td>
