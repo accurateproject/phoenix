@@ -116,13 +116,15 @@ def cdrs():
     params['offset'], params['limit'] = page*items_per_page, items_per_page+1
 
     if not auth.has_membership('admin'):
-        params['tenants'] = [client.reseller.name]
-        params['accounts'] = [client.name]
-        params['subjects'] = [client.name]
+        params['tenants'] = [client.reseller.unique_code]
+        params['accounts'] = [client.unique_code]
+        params['subjects'] = [client.unique_code]
 
+    print params
     cdrs = []
     r = accurate.call("GetCdrs",  params)
 
+    print r
     if r['error']:
         response.flash = r['error']
     else:

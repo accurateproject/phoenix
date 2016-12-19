@@ -103,12 +103,9 @@
 
 {{block page_js}}
 <script type="text/javascript">
-
  $(function() {
    var updateInterval = 3500;
    function getData() {
-
-     // Do a random walk
      $.ajax({
        url: "http://localhost:8000/engine/metrics.json/{{=client.id}}",
        type: "GET",
@@ -117,7 +114,6 @@
 	 {{for st in stats:}}
 	 {{for metric in st.metrics:}}
 	 $('#{{="%s_%s" %(st.name, metric)}}').text(queue['{{=st.name}}']['{{=metric}}']);
-
 	 {{pass}}
 	 {{pass}}
        }
