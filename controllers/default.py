@@ -33,7 +33,7 @@ def clients():
     reseller_id = request.args(0)
     if reseller_id:
         db.client.reseller.default = reseller_id
-        if not auth.has_membership(group_id='admin') and db((db.user_reseller.reseller_id == reseller_id) & (db.user_reseller.user_id == auth.user_id)).isempty():
+        if not accessible_reseller(reseller_id):
             redirect(URL('user', 'not_autorized'))
         query = (db.client.reseller == reseller_id)
     clients = db(query).select()
@@ -43,7 +43,7 @@ def clients():
 def rate_sheets():
     client_id=request.args(0) or redirect('index')
     client = db.client[client_id] or redirect('index')
-    if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
+    if not accessible_client(client_id):
         redirect(URL('user', 'not_autorized'))
     db.rate_sheet.client.default = client.id
     form = crud.update(db.rate_sheet, request.args(1), next=URL('default', 'rate_sheets', args=client.id))

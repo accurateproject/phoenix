@@ -44,7 +44,6 @@ def _user_resellers():
     if user_id in users_resellers:
         for old_reseller_id in users_resellers[user_id]:
             if str(old_reseller_id) not in new_reseller_list:
-                db((db.user_reseller.user_id == user_id) & (db.user_reseller.reseller_id == old_reseller_id)).delete()
                 # remove rights on old clients
                 for old_client in db(db.client.reseller == old_reseller_id).select():
                     auth.del_permission(group_id, 'read', db.client, old_client.id)
@@ -52,8 +51,6 @@ def _user_resellers():
                     auth.del_permission(group_id, 'delete', db.client, old_client.id)
     # add new links
     for reseller_id in new_reseller_list:
-        db.user_reseller.update_or_insert((db.user_reseller.user_id == user_id) & (db.user_reseller.reseller_id == reseller_id),
-            user_id=user_id, reseller_id=reseller_id)
         # add rights on existing clients
         for existing_client in db(db.client.reseller == reseller_id).select():
             auth.add_permission(group_id, 'read', db.client, existing_client.id)
@@ -78,15 +75,12 @@ def _user_clients():
     if user_id in users_clients:
         for old_client_id in users_clients[user_id]:
             if str(old_client_id) not in new_client_list:
-                db((db.user_client.user_id == user_id) & (db.user_client.client_id == old_client_id)).delete()
                 # remove the old clients right
                 auth.del_permission(group_id, 'read', db.client, old_client_id)
                 auth.del_permission(group_id, 'update', db.client, old_client_id)
                 auth.del_permission(group_id, 'delete', db.client, old_client_id)
     # add new links
     for client_id in new_client_list:
-        db.user_client.update_or_insert((db.user_client.user_id == user_id) & (db.user_client.client_id == client_id),
-            user_id=user_id, client_id=client_id)
         auth.add_permission(group_id, 'read', db.client, client_id)
         auth.add_permission(group_id, 'update', db.client, client_id)
         auth.add_permission(group_id, 'delete', db.client, client_id)

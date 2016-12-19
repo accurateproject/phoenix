@@ -25,18 +25,26 @@
               {{=A(SPAN(_class="glyphicon glyphicon-"+('ok' if  user.registration_key != '' else 'remove')), _id="dtr"+str(user.id), callback=URL('_toggle_disabled', args=(user.id)), target="dtr"+str(user.id))}}
             </td>
             <td>
-                <select class="reseller-select" user_id="{{=user.id}}" multiple="multiple">
-                    {{for r in all_resellers:}}
-                    <option value="{{=r.id}}" {{='selected' if user.id in users_resellers and r.id in users_resellers[user.id] else ''}}>{{=r.name}}</option>
-                    {{pass}}
-                </select>
+	      {{if not auth.has_membership(user_id=user.id, role='admin'):}}
+              <select class="reseller-select" user_id="{{=user.id}}" multiple="multiple">
+                {{for r in all_resellers:}}
+                <option value="{{=r.id}}" {{='selected' if user.id in users_resellers and r.id in users_resellers[user.id] else ''}}>{{=r.name}}</option>
+                {{pass}}
+              </select>
+	      {{else:}}
+	      {{=T('n/a')}}
+	      {{pass}}
             </td>
             <td>
+	      {{if not auth.has_membership(user_id=user.id, role='admin'):}}
                 <select class="client-select" user_id="{{=user.id}}" multiple="multiple">
                     {{for c in all_clients:}}
                     <option value="{{=c.id}}" {{='selected' if user.id in users_clients and c.id in users_clients[user.id] else ''}}>{{=c.name}}</option>
                     {{pass}}
                 </select>
+		{{else:}}
+		{{=T('n/a')}}
+		{{pass}}
             </td>
         </tr>
         {{pass}}

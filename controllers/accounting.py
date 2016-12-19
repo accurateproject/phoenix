@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 def invoices():
     client_id=request.args(0) or redirect('default', 'index')
     client = db.client[client_id] or redirect('default', 'index')
-    if not auth.has_membership(group_id='admin') and db((db.user_client.client_id == client_id) & (db.user_client.user_id == auth.user_id)).isempty():
+    if not accessible_client(client_id):
         redirect(URL('user', 'not_autorized'))
     invoices = db(db.invoice.client == client_id).select()
     now = datetime.now()
