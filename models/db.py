@@ -261,13 +261,15 @@ db.define_table(
     'invoice',
     Field('statement_no', 'string', required=True, requires=IS_NOT_EMPTY()),
     Field('uuid', 'string', readable=False, writable=False, default=lambda:str(uuid.uuid4())),
-    Field('client', 'reference client', required=True, readable=False, writable=False),
+    Field('from_client', 'reference client', required=True, readable=False, writable=False),
+    Field('to_client', 'reference client', required=True, readable=False, writable=False),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('start_time', 'datetime'),
     Field('end_time', 'datetime'),
     Field('due_date', 'datetime'),
     Field('paid', 'boolean'),
     Field('body', 'text', readable=False, writable=False),
+    Field('hard_copy', 'upload'),
     format='%(statement_no)s'
 )
 

@@ -10,6 +10,9 @@ def index():
 
 @auth.requires_membership('admin')
 def resellers():
+    if request.args(0): # update
+        db.reseller.unique_code.readable = False
+        db.reseller.unique_code.writable = False
     form = crud.update(db.reseller, request.args(0), onaccept=give_reseller_owner_permissions)
     query = auth.accessible_query('read', db.reseller, auth.user_id)
     resellers = db(query).select()
@@ -25,17 +28,20 @@ def clients():
     else: # only edits
         client_id = request.args(1)
         if client_id:
+            db.client.unique_code.readable = False
+            db.client.unique_code.writable = False
             show_form = True
-            client = db.client[client_id]
-            form = crud.update(db.client, client_id, onaccept=give_client_owner_permissions)
+            form = crud.update(db.client, client_id, next=URL('default', 'clients'))
 
-    query = auth.accessible_query('read', db.client, auth.user_id)
-    reseller_id = request.args(0)
-    if reseller_id:
-        db.client.reseller.default = reseller_id
-        if not accessible_reseller(reseller_id):
-            redirect(URL('user', 'not_autorized'))
-        query = (db.client.reseller == reseller_id)
+    if auth.has_membership('admin') or auth.has_membership('reseller'):
+        reseller_id = request.args(0)
+        if reseller_id:
+            db.client.reseller.default = reseller_id
+            if not accessible_reseller(reseller_id):
+                redirect(URL('user', 'not_autorized'))
+            query = (db.client.reseller == reseller_id)
+    else:
+        query = auth.accessible_query('read', db.client, auth.user_id)
     clients = db(query).select()
     return dict(form=form, show_form=show_form, clients=clients)
 
@@ -46,6 +52,9 @@ def rate_sheets():
     if not accessible_client(client_id):
         redirect(URL('user', 'not_autorized'))
     db.rate_sheet.client.default = client.id
+    if request.args(1): # update
+        db.rate_sheet.unique_code.readable = False
+        db.rate_sheet.unique_code.writable = False
     form = crud.update(db.rate_sheet, request.args(1), next=URL('default', 'rate_sheets', args=client.id))
     rate_sheets = db(db.rate_sheet.client == client.id).select()
     return dict(form=form, rate_sheets=rate_sheets, client=client)

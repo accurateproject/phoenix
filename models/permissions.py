@@ -130,7 +130,6 @@ def give_client_owner_permissions(form):
     auth.add_permission(group_id, 'read', db.client, client_id)
     auth.add_permission(group_id, 'select', db.client, client_id)
     auth.add_permission(group_id, 'update', db.client, client_id)
-    auth.add_permission(group_id, 'delete', db.client, client_id)
 
 def get_user_resellers(user_id=None):
     users_resellers = {}
@@ -188,8 +187,8 @@ def __check_trigger(trigger):
         raise HTTP(404, "Not found")
     # check  it belongs to a client owned by the current user
     if db(auth.accessible_query('read', db.client, auth.user_id) &
-          (db.client.id == db.trigger.client) &
-          (db.trigger.id == trigger.id)).isempty():
+          (db.client.id == db.action_trigger.client) &
+          (db.action_trigger.id == trigger.id)).isempty():
         raise HTTP(403, "Not authorized")
 
 def __check_action(action):
@@ -198,5 +197,5 @@ def __check_action(action):
     # check  it belongs to a client owned by the current user
     if db(auth.accessible_query('read', db.client, auth.user_id) &
           (db.client.id == db.act.client) &
-          (db.act.id == act.id)).isempty():
+          (db.act.id == action.id)).isempty():
         raise HTTP(403, "Not authorized")

@@ -39,8 +39,6 @@ def cdrs():
     field_dict = OrderedDict()
     field_dict['cgr_ids'] = 'list:string'
     field_dict['not_cgr_ids'] = 'list:string'
-    field_dict['run_ids'] = 'list:string'
-    field_dict['not_run_ids'] = 'list:string'
     field_dict['origin_hosts'] = 'list:string'
     field_dict['not_origin_hosts'] = 'list:string'
     field_dict['sources'] = 'list:string'
@@ -80,6 +78,8 @@ def cdrs():
     field_dict['min_cost'] = 'float'
     field_dict['max_cost'] = 'float'
     if auth.has_membership('admin'):
+        field_dict['run_ids'] = 'list:string'
+        field_dict['not_run_ids'] = 'list:string'
         field_dict['tenants'] = 'list:string'
         field_dict['not_tenants'] = 'list:string'
         field_dict['accounts'] = 'list:string'
@@ -120,11 +120,9 @@ def cdrs():
         params['accounts'] = [client.unique_code]
         params['subjects'] = [client.unique_code]
 
-    print params
     cdrs = []
     r = accurate.call("GetCdrs",  params)
 
-    print r
     if r['error']:
         response.flash = r['error']
     else:

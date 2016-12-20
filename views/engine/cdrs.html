@@ -10,10 +10,6 @@
         {{=T('Not UniqueId')}}: <div>{{=form.custom.widget.not_cgr_ids}}</div>
       </div>
       <div class="col-md-2">
-        {{=form.custom.label.run_ids}}: <div>{{=form.custom.widget.run_ids}}</div>
-        {{=form.custom.label.not_run_ids}}: <div>{{=form.custom.widget.not_run_ids}}</div>
-      </div>
-      <div class="col-md-2">
         {{=form.custom.label.origin_hosts}}: <div>{{=form.custom.widget.origin_hosts}}</div>
         {{=form.custom.label.not_origin_hosts}}: <div>{{=form.custom.widget.not_origin_hosts}}</div>
       </div>
@@ -30,7 +26,27 @@
         {{=form.custom.label.not_suppliers}}: <div>{{=form.custom.widget.not_suppliers}}</div>
       </div>
     </div>
-    <div class="row">
+    <a href="#" data-toggle="collapse" data-target="#time-fields">{{=T('Time Fields')}}</a><br/>
+    <div id="time-fields" class="row collapse">
+      <div class="col-md-2">
+        {{=form.custom.label.setup_time_start}}: <div>{{=form.custom.widget.setup_time_start}}</div>
+        {{=form.custom.label.setup_time_end}}: <div>{{=form.custom.widget.setup_time_end}}</div>
+      </div>
+      <div class="col-md-2">
+        {{=form.custom.label.answer_time_start}}: <div>{{=form.custom.widget.answer_time_start}}</div>
+        {{=form.custom.label.answer_time_end}}: <div>{{=form.custom.widget.answer_time_end}}</div>
+      </div>
+      <div class="col-md-2">
+        {{=form.custom.label.created_at_start}}: <div>{{=form.custom.widget.created_at_start}}</div>
+        {{=form.custom.label.created_at_end}}: <div>{{=form.custom.widget.created_at_end}}</div>
+      </div>
+      <div class="col-md-2">
+        {{=form.custom.label.updated_at_start}}: <div>{{=form.custom.widget.updated_at_start}}</div>
+        {{=form.custom.label.updated_at_end}}: <div>{{=form.custom.widget.updated_at_end}}</div>
+      </div>
+    </div>
+    <a href="#" data-toggle="collapse" data-target="#cost-fields">{{=T('Cost Fields')}}</a><br/>
+    <div id="cost-fields" class="row collapse">
       <div class="col-md-2">
         {{=form.custom.label.disconnect_causes}}: <div>{{=form.custom.widget.disconnect_causes}}</div>
         {{=form.custom.label.not_disconnect_causes}}: <div>{{=form.custom.widget.not_disconnect_causes}}</div>
@@ -47,24 +63,9 @@
         {{=form.custom.label.order_id_start}}: <div>{{=form.custom.widget.order_id_start}}</div>
         {{=form.custom.label.order_id_end}}: <div>{{=form.custom.widget.order_id_end}}</div>
       </div>
-      <div class="col-md-2">
-        {{=form.custom.label.setup_time_start}}: <div>{{=form.custom.widget.setup_time_start}}</div>
-        {{=form.custom.label.setup_time_end}}: <div>{{=form.custom.widget.setup_time_end}}</div>
-      </div>
-      <div class="col-md-2">
-        {{=form.custom.label.answer_time_start}}: <div>{{=form.custom.widget.answer_time_start}}</div>
-        {{=form.custom.label.answer_time_end}}: <div>{{=form.custom.widget.answer_time_end}}</div>
-      </div>
     </div>
-    <div class="row">
-      <div class="col-md-2">
-        {{=form.custom.label.created_at_start}}: <div>{{=form.custom.widget.created_at_start}}</div>
-        {{=form.custom.label.created_at_end}}: <div>{{=form.custom.widget.created_at_end}}</div>
-      </div>
-      <div class="col-md-2">
-        {{=form.custom.label.updated_at_start}}: <div>{{=form.custom.widget.updated_at_start}}</div>
-        {{=form.custom.label.updated_at_end}}: <div>{{=form.custom.widget.updated_at_end}}</div>
-      </div>
+    <a href="#" data-toggle="collapse" data-target="#min-max-fields">{{=T('Min-Max Fields')}}</a><br/>
+    <div id="min-max-fields" class="row collapse">
       <div class="col-md-2">
         {{=form.custom.label.min_usage}}: <div>{{=form.custom.widget.min_usage}}</div>
         {{=form.custom.label.max_usage}}: <div>{{=form.custom.widget.max_usage}}</div>
@@ -79,7 +80,12 @@
       </div>
     </div>
     {{if auth.has_membership('admin'):}}
-    <div class="row">
+    <a href="#" data-toggle="collapse" data-target="#admin-fields">{{=T('Admin Fields')}}</a><br/>
+    <div id="admin-fields" class="row collapse">
+      <div class="col-md-2">
+        {{=form.custom.label.run_ids}}: <div>{{=form.custom.widget.run_ids}}</div>
+        {{=form.custom.label.not_run_ids}}: <div>{{=form.custom.widget.not_run_ids}}</div>
+      </div>
       <div class="col-md-2">
         {{=form.custom.label.tenants}}: <div>{{=form.custom.widget.tenants}}</div>
         {{=form.custom.label.not_tenants}}: <div>{{=form.custom.widget.not_tenants}}</div>
@@ -89,8 +95,8 @@
         {{=form.custom.label.not_accounts}}: <div>{{=form.custom.widget.not_accounts}}</div>
       </div>
       <div class="col-md-2">
-	{{=form.custom.label.subjects}}: <div>{{=form.custom.widget.subjects}}</div>
-	{{=form.custom.label.not_subjects}}: <div>{{=form.custom.widget.not_subjects}}</div>
+        {{=form.custom.label.subjects}}: <div>{{=form.custom.widget.subjects}}</div>
+        {{=form.custom.label.not_subjects}}: <div>{{=form.custom.widget.not_subjects}}</div>
       </div>
     </div>
     {{pass}}
@@ -111,14 +117,18 @@
 <table class="table">
   <thead>
     <tr>
-      <th>{{=T('CgrId')}}</th>
+      <th>{{=T('UniqueId')}}</th>
+      {{if auth.has_membership('admin'):}}
       <th>{{=T('RunId')}}</th>
+      {{pass}}
       <th>{{=T('OrderID')}}</th>
       <th>{{=T('OriginHost')}}</th>
       <th>{{=T('Source')}}</th>
       <th>{{=T('OriginID')}}</th>
+      {{if auth.has_membership('admin'):}}
       <th>{{=T('Tenant')}}</th>
       <th>{{=T('Account')}}</th>
+      {{pass}}
       <th>{{=T('Subject')}}</th>
       <th>{{=T('Destination')}}</th>
       <th>{{=T('SetupTime')}}</th>
@@ -137,13 +147,17 @@
     {{if i==items_per_page: break}}
     <tr>
       <td>{{=cdr['CGRID']}}</td>
+      {{if auth.has_membership('admin'):}}
       <td>{{=cdr['RunID']}}</td>
+      {{pass}}
       <td>{{=cdr['OrderID']}}</td>
       <td>{{=cdr['OriginHost']}}</td>
       <td>{{=cdr['Source']}}</td>
       <td>{{=cdr['OriginID']}}</td>
+      {{if auth.has_membership('admin'):}}
       <td>{{=cdr['Tenant']}}</td>
       <td>{{=cdr['Account']}}</td>
+      {{pass}}
       <td>{{=cdr['Subject']}}</td>
       <td>{{=cdr['Destination']}}</td>
       <td>{{=cdr['SetupTime']}}</td>
@@ -152,8 +166,18 @@
       <td>{{=cdr['Usage']}}</td>
       <td>{{=cdr['DisconnectCause']}}</td>
       <td>{{=cdr['Cost']}}</td>
-      <td>{{=cdr['ExtraFields']}}</td>
-      <td>{{=cdr['CostDetails']}}</td>
+      <td>
+        <a href="#" data-toggle="collapse" data-target="#extra-fields-{{=i}}">{{=T('show')}}</a><br/>
+        <div id="extra-fields-{{=i}}" class="collapse">
+          {{=cdr['ExtraFields']}}
+        </div>
+      </td>
+      <td>
+        <a href="#" data-toggle="collapse" data-target="#cost-details-fields-{{=i}}">{{=T('show')}}</a><br/>
+        <div id="cost-details-fields-{{=i}}" class="collapse">
+          {{=cdr['CostDetails']}}
+        </div>
+      </td>
     </tr>
     {{pass}}
   </tbody>

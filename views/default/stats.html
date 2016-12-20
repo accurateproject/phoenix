@@ -113,12 +113,22 @@
        success: function(queue) {
 	 {{for st in stats:}}
 	 {{for metric in st.metrics:}}
-	 $('#{{="%s_%s" %(st.name, metric)}}').text(queue['{{=st.name}}']['{{=metric}}']);
+	 $('#{{="%s_%s" %(st.name, metric)}}').text(format_metric('{{=metric}}', queue['{{=st.name}}']['{{=metric}}']));
 	 {{pass}}
 	 {{pass}}
        }
      });
      return ;
+   }
+
+   function format_metric(metric, value){
+     if(['ACD', 'TCD'].indexOf(metric) > -1){
+       return (value/60).toFixed(2) + 'm';
+     }
+     if(['ASR'].indexOf(metric) > -1){
+       return value + '%';
+     }
+     return value;
    }
 
    function update() {

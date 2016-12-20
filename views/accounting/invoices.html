@@ -1,7 +1,7 @@
 {{extend 'layout.html'}}
 
-<h1>{{=T('Invoices')}}</h1>
-
+{{if invoices_to_me:}}
+<h1>{{=T('Invoices to me')}}</h1>
 
 <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#form">{{=T('Edit') if request.args(1) else T('Generate')}}</button>
 <div id="form" class="collapse {{if request.args(1):}}in{{pass}}">
@@ -12,7 +12,8 @@
   <thead>
     <tr>
       <th>{{=T('Statement No')}}</th>
-      <th>{{=T('Client')}}</th>
+      <th>{{=T('From client')}}</th>
+      <th>{{=T('To client')}}</th>
       <th>{{=T('Status')}}</th>
       <th>{{=T('Start time')}}</th>
       <th>{{=T('End time')}}</th>
@@ -22,18 +23,19 @@
     </tr>
   </thead>
   <tbody>
-    {{for invoice in invoices:}}
+    {{for invoice in invoices_to_me:}}
     <tr>
       <td>{{=invoice.statement_no}}</td>
-      <td>{{=invoice.client.name}}</td>
-      <td>{{=invoice.status}}</td>
+      <td>{{=invoice.from_client.name}}</td>
+      <td>{{=invoice.to_client.name}}</td>
+      <Td>{{=invoice.status}}</td>
       <td>{{=invoice.start_time}}</td>
       <td>{{=invoice.end_time}}</td>
       <td>{{=invoice.due_date}}</td>
       <td>{{=invoice.paid}}</td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
-          {{=A(T('edit'), _href=URL('accounting', 'invoices', args=(invoice.client.id, invoice.id)), _class="btn btn-link")}}
+          {{=A(T('edit'), _href=URL('accounting', 'invoices', args=(invoice.from_client.id, invoice.id)), _class="btn btn-link")}}
           {{=A(T('show'), _href=URL('accounting', 'invoice', args=invoice.uuid), _class="btn btn-link")}}
 	  {{=A(T('pdf'), _href=URL('accounting', 'invoice_pdf', args=invoice.uuid), _class="btn btn-link")}}
         </div>
@@ -42,3 +44,50 @@
     {{pass}}
   </tbody>
 </table>
+{{pass}}
+
+{{if invoices_from_me:}}
+<h1>{{=T('Invoices from me')}}</h1>
+
+<button type="button" class="btn btn-info" data-toggle="collapse" data-target="#form">{{=T('Edit') if request.args(1) else T('Generate')}}</button>
+<div id="form" class="collapse {{if request.args(1):}}in{{pass}}">
+  {{=form}}
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>{{=T('Statement No')}}</th>
+      <th>{{=T('From client')}}</th>
+      <th>{{=T('To client')}}</th>
+      <th>{{=T('Status')}}</th>
+      <th>{{=T('Start time')}}</th>
+      <th>{{=T('End time')}}</th>
+      <th>{{=T('Due date')}}</th>
+      <th>{{=T('Paid')}}</th>
+      <th>{{=T('Actions')}}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{for invoice in invoices_from_me:}}
+    <tr>
+      <td>{{=invoice.statement_no}}</td>
+      <td>{{=invoice.from_client.name}}</td>
+      <td>{{=invoice.to_client.name}}</td>
+      <Td>{{=invoice.status}}</td>
+      <td>{{=invoice.start_time}}</td>
+      <td>{{=invoice.end_time}}</td>
+      <td>{{=invoice.due_date}}</td>
+      <td>{{=invoice.paid}}</td>
+      <td>
+        <div class="btn-group"  role="group" aria-label="actions">
+          {{=A(T('edit'), _href=URL('accounting', 'invoices', args=(invoice.from_client.id, invoice.id)), _class="btn btn-link")}}
+          {{=A(T('show'), _href=URL('accounting', 'invoice', args=invoice.uuid), _class="btn btn-link")}}
+	  {{=A(T('pdf'), _href=URL('accounting', 'invoice_pdf', args=invoice.uuid), _class="btn btn-link")}}
+        </div>
+      </td>
+    </tr>
+    {{pass}}
+  </tbody>
+</table>
+{{pass}}

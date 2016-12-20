@@ -5,23 +5,22 @@
 
 <div class="row">
   <p>{{=T('Date of Statment')}}: <b>{{=invoice.created_on}}</b>.<br>
-  {{=T('To be paid within %s days of invoice date') % invoice.client.payment_period}}.<br>
+  {{=T('To be paid within %s days of invoice date') % invoice.to_client.payment_period}}.<br>
   {{=T('To be paid before')}} {{=to_be_paid_date}}</p>
 </div>
   <div class="row">
     <div class="col-md-4 col-xs-4">
-      <h4><b>{{=T('FROM')}}</b>:  {{=invoice.client.reseller.name}}</h4>
-      {{=XML(invoice.client.reseller.address.replace('\n', '<br />'), sanitize=True, permitted_tags=['br/'])}}
+      <h4><b>{{=T('FROM')}}</b>:  {{=invoice.from_client.name}}</h4>
+      {{=XML(invoice.from_client.address.replace('\n', '<br />'), sanitize=True, permitted_tags=['br/'])}}
     </div>
     <div class="col-md-4 col-xs-4 col-xs-offset-3 col-md-offset-3 invoice-client-address">
-      <h4><b>{{=T('TO')}}</b>: {{=invoice.client.name}}</h4>
-      {{=XML(invoice.client.address.replace('\n', '<br />'), sanitize=True, permitted_tags=['br/'])}}
+      <h4><b>{{=T('TO')}}</b>: {{=invoice.to_client.name}}</h4>
+      {{=XML(invoice.to_client.address.replace('\n', '<br />'), sanitize=True, permitted_tags=['br/'])}}
     </div>
   </div>
   <div class="row invoice-statement-for">
-    <b>{{=T('Statment FOR')}}</b>:{{=T('VoIP services from %s to %s, timezone %s') % (invoice.start_time, invoice.end_time, invoice.client.time_zone)}}.
+    <b>{{=T('Statment FOR')}}</b>:{{=T('VoIP services from %s to %s, timezone %s') % (invoice.start_time, invoice.end_time, invoice.to_client.time_zone)}}.
   </div>
-
 
   <table class="table">
     <thead>
@@ -52,11 +51,11 @@
 	<b>{{=T('Payment should be directed to')}}</b>:
     </div>
     <div class="col-md-4 col-xs-4 col-xs-offset-2 col-md-offset-2 invoice-client-address">
-      {{=T('SubTotal: %.2f %s') % (body['total'], invoice.client.currency)}} <br/>
+      {{=T('SubTotal: %.2f %s') % (body['total'], invoice.to_client.currency)}} <br/>
       {{=T('Tax (%d\%): %.2f') % (0, 0.0)}} <br/>
-      <b>{{=T('Total')}}</b>: {{='%.2f %s' %(body['total'], invoice.client.currency)}}
+      <b>{{=T('Total')}}</b>: {{='%.2f %s' %(body['total'], invoice.to_client.currency)}}
     </div>
     </div>
-{{=A('pdf me', _href=URL('accounting', 'pdf_me'), _class='no-print')}}
+{{=A('pdf me', _href=URL('accounting', 'invoice_pdf', args=invoice.uuid), _class='no-print')}}
   </div>
 </div>
