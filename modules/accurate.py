@@ -107,15 +107,18 @@ def account_to_tp(rs):
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
-    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': client_name, 'Masked': False, 'Weight': 10,
-                           'Profile':[
-                               {'AttrName': 'Account', 'AttrValue': client_name},
-                               {'AttrName': 'Subject', 'AttrValue': client_name},
-                               {'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)},
-                               {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
-                               {'AttrName': 'direction', 'AttrValue': rs.direction},
-                           ],
-    })
+    profile = [
+        {'AttrName': 'Account', 'AttrValue': client_name},
+        {'AttrName': 'Subject', 'AttrValue': client_name},
+        {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
+        {'AttrName': 'direction', 'AttrValue': rs.direction},
+    ]
+
+    if rs.clien.nb_prefix:
+        prefix.append({'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)})
+
+    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': client_name, 'Masked': False, 'Weight': 10, 'Profile': profile})
+
     result += 'User activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
