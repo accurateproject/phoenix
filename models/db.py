@@ -115,12 +115,26 @@ def check_client_prefix_uniqueness(form):
                     return
 
 
+def check_reseller_gateways(form):
+    if len(form.vars.gateways) == 0:
+        form.errors.gateways = T('please eneter at least one gateway')
+    gws = form.vars.gateways if isinstance(form.vars.gateways, list) else [form.vars.gateways]
+    for gw in gws:
+        value, error = IS_IPV4()(gw)
+        if error:
+            form.errors.gateways = error
+            return
+
+
+
 from gluon.tools import Crud
 crud = Crud(db)
 crud.settings.auth = auth
 crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
 crud.settings.create_onvalidation.client.append(check_client_prefix_uniqueness)
 crud.settings.update_onvalidation.client.append(check_client_prefix_uniqueness)
+crud.settings.create_onvalidation.reseller.append(check_reseller_gateways)
+crud.settings.update_onvalidation.reseller.append(check_reseller_gateways)
 
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
