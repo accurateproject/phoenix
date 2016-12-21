@@ -4,7 +4,7 @@
 <h1>{{=T('Invoices to me')}}</h1>
 
 <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#form">{{=T('Edit') if request.args(1) else T('Generate')}}</button>
-<div id="form" class="collapse {{if request.args(1):}}in{{pass}}">
+<div id="form" class="collapse {{if request.args(1) or form.errors:}}in{{pass}}">
   {{=form}}
 </div>
 

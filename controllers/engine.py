@@ -116,7 +116,7 @@ def cdrs():
     params['offset'], params['limit'] = page*items_per_page, items_per_page+1
 
     if not auth.has_membership('admin'):
-        params['tenants'] = [client.reseller.unique_code]
+        params['tenants'] = [client.unique_code]
         params['accounts'] = [client.unique_code]
         params['subjects'] = [client.unique_code]
 
@@ -168,5 +168,6 @@ def activate_stats():
     stats = db(db.stats.client == client_id).select()
     resp = accurate.stats_to_tp(client, actions, triggers, stats)
     resp +=  accurate.activate_tpid(client_name + "_stats")
+    resp += accurate.reload_stats(stats)
     session.flash = XML(resp)
     redirect(request.env.http_referer)

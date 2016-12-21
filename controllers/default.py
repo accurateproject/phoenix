@@ -78,6 +78,8 @@ def rate_sheet_import():
     if form.process().accepted:
         rate_sheet_reader = csv.reader(form.vars.data.file, delimiter=',', quotechar='"')
         for row in rate_sheet_reader:
+            if row[0] == 'Code': # header
+                continue
             db.rate.update_or_insert((db.rate.code == row[0]) & (db.rate.sheet == rate_sheet_id),
                                      code = row[0],
                                      code_name = row[1],
@@ -105,8 +107,8 @@ def stats():
     if stats_id is not None:
         stats = db.stats[stats_id]
         __check_stats(stats)
-    db.stats.tenants.default = [client.reseller.name]
-    db.stats.accounts.default = [client.name]
+    db.stats.tenants.default = [client.unique_code]
+    db.stats.accounts.default = [client.unique_code]
     db.stats.client.default = client.id
     form = crud.update(db.stats, request.args(1), next=URL('default', 'stats', args=client.id))
     stats = db(db.stats.client == client.id).select()

@@ -31,7 +31,7 @@ def call(method, *args):
 def rate_sheet_to_tp(rs, rs_rates):
     destinations = {}
     rates = {}
-    reseller_name = rs.client.reseller.unique_code
+    tenant_name = rs.client.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
     for rate in rs_rates:
@@ -71,7 +71,7 @@ def rate_sheet_to_tp(rs, rs_rates):
     results['RatingProfiles'] = []
     direction = '*out' #if rs.direction == 'outbound' else '*in'
     r = call('SetTPRatingProfile', {'TPid': rs_name + "_tp", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Direction': direction, 'Tenant': reseller_name,  'Category': 'call', 'Subject': client_name,
+            'Direction': direction, 'Tenant': tenant_name,  'Category': 'call', 'Subject': client_name,
             'RatingPlanActivations': [{'RatingPlanId': client_name + '_RP_' + rs_name, 'ActivationTime': '2010-01-01T00:00:00Z', 'FallbackSubjects': '', 'CdrStatQueueIds':''}]})
     results['RatingProfiles'].append(r)
 
@@ -97,11 +97,11 @@ def activate_tpid(tpid):
     return result
 
 def account_to_tp(rs):
-    reseller_name = rs.client.reseller.unique_code
+    tenant_name = rs.client.unique_code #rs.client.reseller.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
     r = call('SetTPAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Tenant': reseller_name, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
+            'Tenant': tenant_name, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
@@ -110,14 +110,14 @@ def account_to_tp(rs):
     profile = [
         {'AttrName': 'Account', 'AttrValue': client_name},
         {'AttrName': 'Subject', 'AttrValue': client_name},
-        {'AttrName': 'sip_from_host', 'AttrValue': 'filter: %s' % ';'.join(rs.client.reseller.gateways)},
+        {'AttrName': 'sip_from_host', 'AttrValue': 'filter:%s' % ';'.join(rs.client.reseller.gateways)},
         {'AttrName': 'direction', 'AttrValue': rs.direction},
     ]
 
-    if rs.clien.nb_prefix:
-        prefix.append({'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)})
+    if rs.client.nb_prefix:
+        profile.append({'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)})
 
-    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': reseller_name, 'UserName': client_name, 'Masked': False, 'Weight': 10, 'Profile': profile})
+    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': tenant_name, 'UserName': client_name, 'Masked': False, 'Weight': 10, 'Profile': profile})
 
     result += 'User activation<br>'
     if r['result'] != 'OK':
@@ -179,6 +179,23 @@ def stats_to_tp(client, actions, triggers, stats):
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
             break
+    result += partial_result
+
+    return result
+
+def reload_stats(stats):
+    result = 'Stats realod<br>'
+    partial_result = 'OK<br>'
+    # reload
+    r = call('CDRStatsV1.ReloadQueues', {'StatsQueueIds':[st.name for st in stats]})
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+
+    #reset
+    r = call('CDRStatsV1.ResetQueues', {'StatsQueueIds':[st.name for st in stats]})
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+
     result += partial_result
 
 
