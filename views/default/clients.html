@@ -3,11 +3,12 @@
 <h1>{{=T('Clients')}}</h1>
 
 {{if show_form:}}
+{{edit=request.vars['edit']}}
 <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#form">{{=T('New')}}</button>
-<div id="form" class="collapse {{if request.args(1):}}in{{pass}}">
+<div id="form" class="collapse {{if edit:}}in{{pass}}">
   {{=form.custom.begin}}
   {{=form.custom.label.name}}: <div>{{=form.custom.widget.name}}</div>
-  {{if not request.args(1):}}
+  {{if not request.vars['edit']:}}
   {{=form.custom.label.unique_code}}: <div>{{=form.custom.widget.unique_code}}</div>
   {{pass}}
   {{=form.custom.label.currency}}: <div>{{=form.custom.widget.currency}}</div>
@@ -15,12 +16,16 @@
   {{=form.custom.label.nb_prefix}}: <div>{{=form.custom.widget.nb_prefix}}</div>
   {{=form.custom.label.status}}: <div>{{=form.custom.widget.status}}</div>
   {{=form.custom.label.address}}: <div>{{=form.custom.widget.address}}</div>
-  {{=form.custom.label.invoice_period}}: <div>{{=form.custom.widget.invoice_period}}</div>
-  {{=form.custom.label.payment_period}}: <div>{{=form.custom.widget.payment_period}}</div>
+  {{=T('Invoice system')}}: <div>{{=form.custom.widget.invoice_period}} net {{=form.custom.widget.payment_period}}</div>
   {{=form.custom.label.tax_id}}: <div>{{=form.custom.widget.tax_id}}</div>
   {{=form.custom.label.reg_id}}: <div>{{=form.custom.widget.reg_id}}</div>
+  {{if request.vars['edit']:}}
+  {{=T('Check to delete')}}: {{=form.custom.delete}}
+  {{pass}}
+  <br/>
   {{=form.custom.submit}}
   {{=form.custom.end}}
+
 </div>
 {{pass}}
 
@@ -61,7 +66,7 @@
       <td>{{=client.address}}</td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
-          {{=A(T('edit'), _href=URL('default', 'clients', args=(client.reseller.id, client.id)), _class="btn btn-link")}}
+          {{=A(T('edit'), _href=URL(args=client.reseller.id, vars={'edit': client.id, 'reseller_id': client.reseller.id}), _class="btn btn-link")}}
           {{=A(T('rate sheets'), _href=URL('default', 'rate_sheets', args=client.id), _class="btn btn-link")}}
           {{=A(T('statistics'), _href=URL('default', 'stats', args=client.id), _class="btn btn-link")}}
           {{=A(T('triggers'), _href=URL('default', 'triggers', args=client.id), _class="btn btn-link")}}

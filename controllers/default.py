@@ -5,7 +5,7 @@ def index():
     if auth.has_membership('admin'):
         redirect(URL('default', 'resellers'))
     if not auth.has_membership('admin') and (auth.has_membership('reseller') or auth.has_membership('client')):
-        redirect(URL('default', 'clients'))
+        redirect(URL('default', 'my_clients'))
     return dict()
 
 @auth.requires_membership('admin')
@@ -18,31 +18,37 @@ def resellers():
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
-@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('reseller') or auth.has_membership('client'))
+@auth.requires(auth.has_membership('admin') or auth.has_membership('reseller'))
 def clients():
-    form = None
-    show_form = False
-    if auth.has_membership('admin') or auth.has_membership('reseller'):
-        form = crud.update(db.client, request.args(1), onaccept=give_client_owner_permissions)
-        show_form = True
-    else: # only edits
-        client_id = request.args(1)
-        if client_id:
-            db.client.unique_code.readable = False
-            db.client.unique_code.writable = False
-            show_form = True
-            form = crud.update(db.client, client_id, next=URL('default', 'clients'))
+    show_form = True
+    reseller_id = request.args(0) or redirect('index')
+    if not accessible_reseller(reseller_id):
+        redirect(URL('user', 'not_autorized'))
+    db.client.reseller.default = reseller_id
+    db.client.nb_prefix.requires=IS_NOT_IN_DB(db(db.client.reseller==reseller_id), 'client.nb_prefix', error_message=T('reseller has already a client with this prefix'))
+    if request.vars['edit']:
+        db.client.unique_code.readable = False
+        db.client.unique_code.writable = False
+    onaccept = give_client_owner_permissions if auth.has_membership('reseller') else None
+    form = crud.update(db.client, request.vars['edit'], next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
 
-    if auth.has_membership('admin') or auth.has_membership('reseller'):
-        reseller_id = request.args(0)
-        if reseller_id:
-            db.client.reseller.default = reseller_id
-            if not accessible_reseller(reseller_id):
-                redirect(URL('user', 'not_autorized'))
-            query = (db.client.reseller == reseller_id)
+    clients = db(db.client.reseller == reseller_id).select()
+    return dict(form=form, show_form=show_form, clients=clients)
+
+@auth.requires(auth.has_membership('client'))
+def my_clients():
+    show_form = False
+    client_id = request.vars['edit']
+    if client_id:
+        show_form = True
+        db.client.unique_code.readable = False
+        db.client.unique_code.writable = False
+        form = crud.update(db.client, client_id, next=URL('default', 'my_clients'))
     else:
-        query = auth.accessible_query('read', db.client, auth.user_id)
+        form = None
+    query = auth.accessible_query('read', db.client, auth.user_id)
     clients = db(query).select()
+    response.view = 'default/clients.html'
     return dict(form=form, show_form=show_form, clients=clients)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))

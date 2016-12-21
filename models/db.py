@@ -89,13 +89,38 @@ from gluon.tools import Auth, Service, PluginManager
 
 # host names must be a list of allowed host names (glob syntax allowed)
 auth = Auth(db, host_names=myconf.get('host.names'))
-service = Service()
+#service = Service()
 #plugins = PluginManager()
+
+def check_client_prefix_uniqueness(form):
+    edited_client_id = request.vars['edit']
+    reseller = db.reseller[request.vars['reseller_id']]
+    if not reseller:
+        #something very wrong here, no point going further
+        return
+    rows = db((db.client.id != edited_client_id) & (db.client.reseller == db.reseller.id)).select(db.client.nb_prefix, db.reseller.gateways)
+    existing_pairs = {}
+    for row in rows:
+        for gw in row.reseller.gateways:
+            if gw not in existing_pairs:
+                existing_pairs[gw] = []
+            existing_pairs[gw].append(row.client.nb_prefix)
+
+    nb_prefix = form.vars['nb_prefix']
+    for gw in reseller.gateways:
+        if gw in existing_pairs:
+            for existing_prefix in existing_pairs[gw]:
+                if nb_prefix.startswith(existing_prefix) or existing_prefix.startswith(nb_prefix):
+                    form.errors.nb_prefix = T('prefix %s in coflict with existing %s') % (nb_prefix, existing_prefix)
+                    return
+
 
 from gluon.tools import Crud
 crud = Crud(db)
 crud.settings.auth = auth
 crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
+crud.settings.create_onvalidation.client.append(check_client_prefix_uniqueness)
+crud.settings.update_onvalidation.client.append(check_client_prefix_uniqueness)
 
 # -------------------------------------------------------------------------
 # create all tables needed by auth if not custom tables
@@ -154,7 +179,7 @@ db.define_table(
     Field('unique_code', 'string',  required=True, unique=True, length=4, requires=[IS_MATCH('^\w{2,4}$'), IS_NOT_IN_DB(db, 'reseller.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
-    Field('gateways', 'list:string', requires=IS_IPV4()),
+    Field('gateways', 'list:string'),
     Field('address', 'text', length=1000),
     Field('tax_id', 'string'),
     Field('reg_id', 'string'),
@@ -168,12 +193,12 @@ db.define_table(
     Field('reseller', 'reference reseller', readable=False, writable=False),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
-    Field('nb_prefix', 'string', default=''),
+    Field('nb_prefix', 'string'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('active_rate_sheet', 'reference rate_sheet', readable=False, writable=False),
     Field('address', 'text', length=1000),
-    Field('invoice_period', 'integer', required=True, requires=IS_INT_IN_RANGE(0, 100, error_message=T('too small or too large!'))),
-    Field('payment_period', 'integer', required=True, requires=IS_INT_IN_RANGE(0, 100, error_message=T('too small or too large!'))),
+    Field('invoice_period', 'integer', required=True, default=1, requires=IS_IN_SET([i for i in range(1,60)]), widget=SQLFORM.widgets.options.widget),
+    Field('payment_period', 'integer', required=True, default=1, requires=IS_IN_SET([i for i in range(1,60)]), widget=SQLFORM.widgets.options.widget),
     Field('tax_id', 'string'),
     Field('reg_id', 'string'),
     format='%(name)s'
@@ -263,11 +288,10 @@ db.define_table(
     Field('uuid', 'string', readable=False, writable=False, default=lambda:str(uuid.uuid4())),
     Field('from_client', 'reference client', required=True, readable=False, writable=False),
     Field('to_client', 'reference client', required=True, readable=False, writable=False),
-    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled', 'paid')), default='enabled'),
     Field('start_time', 'datetime'),
     Field('end_time', 'datetime'),
     Field('due_date', 'datetime'),
-    Field('paid', 'boolean'),
     Field('body', 'text', readable=False, writable=False),
     Field('hard_copy', 'upload'),
     format='%(statement_no)s'

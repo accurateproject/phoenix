@@ -18,7 +18,6 @@
       <th>{{=T('Start time')}}</th>
       <th>{{=T('End time')}}</th>
       <th>{{=T('Due date')}}</th>
-      <th>{{=T('Paid')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
@@ -32,7 +31,6 @@
       <td>{{=invoice.start_time}}</td>
       <td>{{=invoice.end_time}}</td>
       <td>{{=invoice.due_date}}</td>
-      <td>{{=invoice.paid}}</td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL('accounting', 'invoices', args=(invoice.from_client.id, invoice.id)), _class="btn btn-link")}}

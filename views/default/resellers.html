@@ -28,11 +28,10 @@
       <td>{{=reseller.unique_code}}</td>
       <td>{{=reseller.currency}}</td>
       <td>{{=reseller.status}}</td>
-      <td>{{=reseller.gateways}}</td>
+      <td>{{=', '.join(reseller.gateways)}}</td>
       <td>{{=reseller.tax_id}}</td>
       <td>{{=reseller.reg_id}}</td>
       <td>{{=reseller.address}}</td>
-      <td>{{=', '.join(reseller.gateways)}}</td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL('default', 'resellers', args=reseller.id), _class="btn btn-link")}}

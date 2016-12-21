@@ -93,7 +93,7 @@ def cdrs():
         field = (key,value)
         fields.append(Field(*field))
     form=SQLFORM.factory(*fields, formstyle='bootstrap3_stacked')
-    if form.process().accepted:
+    if form.process(keepvalues=True).accepted:
         for key, value in form.vars.iteritems():
             if field_dict[key] == 'list:string' and value != '':
                 if isinstance(value, basestring):
