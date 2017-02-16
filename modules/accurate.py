@@ -95,25 +95,25 @@ def account_to_tp(rs):
     tenant = rs.client.unique_code #rs.client.reseller.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
-    r = call('SetTpAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Tenant': tenant, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
+
+    r = call('SetAccount', {"Tenant":"t1", "Account":"t1", "AllowNegative":true})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
-    profile = [
-        {'AttrName': 'Account', 'AttrValue': client_name},
-        {'AttrName': 'Subject', 'AttrValue': client_name},
-        {'AttrName': 'sip_from_host', 'AttrValue': 'filter:%s' % ';'.join(rs.client.reseller.gateways)},
-        {'AttrName': 'direction', 'AttrValue': rs.direction},
-    ]
-
+    query = '{'
     if rs.client.nb_prefix:
-        profile.append({'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)})
+        query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']},"
+    query += '''
+'sip_from_host':{'$in':%(gateways)s},
+'Account':{'$usr':'%(client)s'},
+'Tenant':{'$usr':'%(tenant)s'},
+'Subject':{'$usr':'%(client)s'},
+'direction':{'$usr': 'outbound'}''' % dict(gateways=rs.client.reseller.gateways, prefix=rs.client.nb_prefix, client=client_name, tenant=tenant)
+    query += '}'
 
-    r = call('SetTpUser', {'TPid': rs_name + "_acc", 'Tenant': tenant, 'UserName': client_name, 'Masked': False, 'Weight': 10, 'Profile': profile})
-
+    r = call('UpdateUser', {"Tenant":tenant, "Name":client_name, "Weight":10, "Query":query})
     result += 'User activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
