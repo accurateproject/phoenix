@@ -145,9 +145,7 @@ def activate_rate_sheet():
     rs_name = accurate.upper_under(rate_sheet.name)
 
     resp = accurate.rate_sheet_to_tp(rate_sheet, rs_rates)
-    resp +=  accurate.account_to_tp(rate_sheet)
-    resp +=  accurate.activate_tpid(rs_name + "_tp")
-    resp +=  accurate.activate_tpid(rs_name + "_acc")
+
 
     rate_sheet.client.active_rate_sheet = rate_sheet.id
     rate_sheet.client.update_record()

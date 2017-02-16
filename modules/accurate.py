@@ -11,7 +11,7 @@ def upper_under(text):
     return text.upper().replace(' ', '_')
 
 def call(method, *args):
-    method = 'ApierV2.' + method if '.' not in method else method
+    method = 'ApiV1.' + method if '.' not in method else method
     try:
         r = requests.post(myconf.get('accurate.server'),
             json = {'id':random.randint(1, sys.maxint), 'method': method, 'params':args})
@@ -29,50 +29,44 @@ def call(method, *args):
 
 
 def rate_sheet_to_tp(rs, rs_rates):
-    destinations = {}
-    rates = {}
-    tenant_name = rs.client.unique_code
+    destinations = []
+    rates = []
+    tenant = rs.client.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
     for rate in rs_rates:
         rate.code_name = upper_under(rate.code_name)
-        if rate.code_name not in destinations:
-            destinations[rate.code_name] = []
-        if rate.code not in destinations[rate.code_name]:
-            destinations[rate.code_name].append(rate.code)
-        rate_id = client_name + "_RT_" + rate.code_name
-        rates[rate_id] = {"rate": rate.rate, "min_increment": rate.min_increment, }
+        destinations.append({'Tenant':tenant, 'Code':rate.code, 'Tag':rate.code_name})
+        rates.append({'Tenant':tenant, 'Tag':'R'+rate.code, 'Slots':
+                      [{'Rate':rate.rate, 'RateUnit':'60s', 'RateIncrement':str(rate['min_increment']) + 's'}]})
 
     results = {}
     results['Destinations'] = []
-    for dest_id, prefixes in destinations.iteritems():
-        r = call('SetTPDestination', {'TPid': rs_name + "_tp", 'DestinationId': dest_id, 'Prefixes': prefixes})
+    for dest in destinations:
+        r = call('SetTpDestination', dest)
         results['Destinations'].append(r)
 
     results['Rates'] = []
-    for rate_id, rate in rates.iteritems():
-        r = call('SetTPRate', {'TPid': rs_name + "_tp", 'RateId': rate_id,
-                'RateSlots': [{'Rate': rate['rate'], 'RateUnit': '60s', 'RateIncrement': str(rate['min_increment']) + 's', 'GroupIntervalStart': '0s'}]})
+    for rate in rates:
+        r = call('SetTpRate', rate)
         results['Rates'].append(r)
 
     results['DestinationRates'] = []
-    for dest_id in destinations:
-        r = call('SetTPDestinationRate', {'TPid': rs_name + "_tp", 'DestinationRateId': client_name + '_DR_' + dest_id,
-                'DestinationRates': [{'DestinationId': dest_id, 'RateId': client_name + '_RT_'+dest_id, 'RoundingMethod': '*up', 'RoundingDecimals': 6, 'MaxCost':0, 'MaxCostStrategy':''}]})
-        results['DestinationRates'].append(r)
+    bindings=[]
+    for dest in destinations:
+        bindings.append({'DestinationCode':dest['Code'], 'RatesTag':'R'+dest['Code'], 'RoundingMethod':'*middle', 'RoundingDecimals':6})
+    r = call('SetTpDestinationRate', {'Tenant':tenant, 'Tag':'DR_STANDARD', 'Bindings':bindings})
+    results['DestinationRates'].append(r)
 
     results['RatingPlans'] = []
-    rating_plan_bindings = []
-    for dest_id in destinations:
-        rating_plan_bindings.append({'DestinationRatesId': client_name + '_DR_' + dest_id, 'TimingId': '*any', 'Weight': 10})
-    r = call('SetTPRatingPlan', {'TPid': rs_name + "_tp", 'RatingPlanId': client_name + '_RP_' + rs_name, 'RatingPlanBindings': rating_plan_bindings})
+    r = call('SetTpRatingPlan', {'Tenant':tenant, 'Tag':'RP_STANDARD', 'Bindings':
+                                 [{'DestinationRatesTag':'DR_STANDARD', 'TimingTag':'*any', 'Weight':10}]})
     results['RatingPlans'].append(r)
 
     results['RatingProfiles'] = []
     direction = '*out' #if rs.direction == 'outbound' else '*in'
-    r = call('SetTPRatingProfile', {'TPid': rs_name + "_tp", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Direction': direction, 'Tenant': tenant_name,  'Category': 'call', 'Subject': client_name,
-            'RatingPlanActivations': [{'RatingPlanId': client_name + '_RP_' + rs_name, 'ActivationTime': '2010-01-01T00:00:00Z', 'FallbackSubjects': '', 'CdrStatQueueIds':''}]})
+    r = call('SetTpRatingProfile', {'Tenant':tenant, 'Direction':direction, 'Category':'call', 'Subject':client_name, 'Activations':
+                                    [{'ActivationTime':'2012-01-01T00:00:00Z', "RatingPlanTag":"RP_STANDARD"}]})
     results['RatingProfiles'].append(r)
 
     response = ''
@@ -80,6 +74,7 @@ def rate_sheet_to_tp(rs, rs_rates):
         response += key + '<br>'
         r = ''
         for result in result_list:
+            print result
             if result['result'] != 'OK':
                 r += 'result: %s error: %s <br>' % (result['result'], result['error'])
         if len(r) == 0:
@@ -97,11 +92,11 @@ def activate_tpid(tpid):
     return result
 
 def account_to_tp(rs):
-    tenant_name = rs.client.unique_code #rs.client.reseller.unique_code
+    tenant = rs.client.unique_code #rs.client.reseller.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
-    r = call('SetTPAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
-            'Tenant': tenant_name, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
+    r = call('SetTpAccountActions', {'TPid': rs_name + "_acc", 'LoadId': current.request.now.strftime('%d%b%Y_%H:%M:%S'),
+            'Tenant': tenant, 'Account': client_name, 'ActionPlanId': '', 'ActionTriggersId': '', 'AllowNegative': True, 'Disabled':False})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
@@ -117,7 +112,7 @@ def account_to_tp(rs):
     if rs.client.nb_prefix:
         profile.append({'AttrName': 'Destination', 'AttrValue': 'process:~destination:s/^%s(\d+)/${1}/(^%s)' % (rs.client.nb_prefix, rs.client.nb_prefix)})
 
-    r = call('SetTPUser', {'TPid': rs_name + "_acc", 'Tenant': tenant_name, 'UserName': client_name, 'Masked': False, 'Weight': 10, 'Profile': profile})
+    r = call('SetTpUser', {'TPid': rs_name + "_acc", 'Tenant': tenant, 'UserName': client_name, 'Masked': False, 'Weight': 10, 'Profile': profile})
 
     result += 'User activation<br>'
     if r['result'] != 'OK':
@@ -138,7 +133,7 @@ def stats_to_tp(client, actions, triggers, stats):
             'Identifier': '*'+action.action_type,
         })
     for action_tag, action_body in action_dict.iteritems():
-        r = call('SetTPActions', {'TPid': client.unique_code + "_stats", 'ActionsId': action_tag, "Actions": action_body})
+        r = call('SetTpActions', {'TPid': client.unique_code + "_stats", 'ActionsId': action_tag, "Actions": action_body})
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
             break
@@ -160,7 +155,7 @@ def stats_to_tp(client, actions, triggers, stats):
 	    'ActionsId': trigger.act.name,
         })
     for trigger_tag, trigger_body in trigger_dict.iteritems():
-        r = call('SetTPActionTriggers', {'TPid': client.name + "_stats", 'ActionTriggersId': trigger_tag, "ActionTriggers": trigger_body})
+        r = call('SetTpActionTriggers', {'TPid': client.name + "_stats", 'ActionTriggersId': trigger_tag, "ActionTriggers": trigger_body})
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
             break
@@ -169,7 +164,7 @@ def stats_to_tp(client, actions, triggers, stats):
     result += 'Stats activation<br>'
     partial_result = 'OK<br>'
     for st in stats:
-        r = call('SetTPCdrStats', {'TPid': client.name + "_stats", 'CdrStatsId': st.name, "CdrStats": [{'QueueLength': str(st.queue_length), 'TimeWindow': str(st.time_window), 'SaveInterval': str(st.save_interval), 'Metrics': ';'.join(st.metrics),
+        r = call('SetTpCdrStats', {'TPid': client.name + "_stats", 'CdrStatsId': st.name, "CdrStats": [{'QueueLength': str(st.queue_length), 'TimeWindow': str(st.time_window), 'SaveInterval': str(st.save_interval), 'Metrics': ';'.join(st.metrics),
         'SetupInterval': str(st.setup_interval), 'TORs': ';'.join(st.tors), 'CdrHosts': ';'.join(st.cdr_hosts), 'CdrSources': ';'.join(st.cdr_sources),
         'ReqTypes': ';'.join(st.req_types), 'Directions': ';'.join(st.directions), 'Tenants': ';'.join(st.tenants), 'Categories': ';'.join(st.categories),
         'Accounts': ';'.join(st.accounts), 'Subjects': ';'.join(st.subjects), 'DestinationIds': ';'.join(st.destination_ids),
