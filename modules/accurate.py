@@ -95,7 +95,7 @@ def account_update(client):
     tenant = client.unique_code #rs.client.reseller.unique_code
     client_name = client.unique_code
 
-    r = call('SetAccount', {"Tenant":"t1", "Account":"t1", "AllowNegative":True})
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "AllowNegative":True})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
