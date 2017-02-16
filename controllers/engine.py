@@ -146,7 +146,6 @@ def activate_rate_sheet():
 
     resp = accurate.rate_sheet_to_tp(rate_sheet, rs_rates)
 
-
     rate_sheet.client.active_rate_sheet = rate_sheet.id
     rate_sheet.client.update_record()
     session.flash = XML(resp)
