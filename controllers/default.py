@@ -32,9 +32,6 @@ def clients():
         db.client.unique_code.writable = False
     onaccept = give_client_owner_permissions if auth.has_membership('reseller') else None
     form = crud.update(db.client, request.vars['edit'], next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
-    client = db.client[request.vars['edit']]
-    if client:
-        accurate.account_update(client)
 
     clients = db(db.client.reseller == reseller_id).select()
     return dict(form=form, show_form=show_form, clients=clients)
@@ -48,9 +45,6 @@ def my_clients():
         db.client.unique_code.readable = False
         db.client.unique_code.writable = False
         form = crud.update(db.client, client_id, next=URL('default', 'my_clients'))
-        client = db.client[client_id]
-        if client:
-            accurate.account_update(client)
     else:
         form = None
     query = auth.accessible_query('read', db.client, auth.user_id)

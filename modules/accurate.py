@@ -95,7 +95,7 @@ def account_update(client):
     tenant = client.unique_code #rs.client.reseller.unique_code
     client_name = client.unique_code
 
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "AllowNegative":True})
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "AllowNegative":True, "Disabled":client.status == 'disabled'})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
@@ -104,16 +104,24 @@ def account_update(client):
     query = '{'
     if client.nb_prefix:
         query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']}," % dict(prefix=client.nb_prefix)
-    query += '''
-'sip_from_host':{'$in':%(gateways)s},
-'Account':{'$usr':'%(client)s'},
-'Tenant':{'$usr':'%(tenant)s'},
-'Subject':{'$usr':'%(client)s'},
-'direction':{'$usr': 'outbound'}''' % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
+    query += ''' 'sip_from_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Subject':{'$usr':'%(client)s'}, 'direction':{'$usr': 'outbound'}'''\
+             % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
     query += '}'
 
     r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name, "Weight":10, "Query":query})
     result += 'User activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+    return result
+
+def account_disable(client):
+    tenant = client.unique_code #rs.client.reseller.unique_code
+    client_name = client.unique_code
+
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "Disabled":True})
+    result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:

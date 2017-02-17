@@ -185,7 +185,7 @@ db._common_fields.append(auth.signature)
 # -------------------------------------------------------------------------
 # auth.enable_record_versioning(db)
 
-
+import accurate
 
 db.define_table(
     'reseller',
@@ -217,7 +217,6 @@ db.define_table(
     Field('reg_id', 'string'),
     format='%(name)s'
 )
-
 
 db.define_table(
     'rate_sheet',
@@ -314,3 +313,27 @@ db.define_table(
 #db.action_trigger.act.requires = IS_IN_DB(db(
 #    (db.act.client == db.user_client.client_id) &
 #    (auth.user_id == db.user_client.user_id)), db.act.id, '%(name)s')
+
+db.client._after_insert.append(lambda f, id: accurate.account_update(db.client[id]))
+db.client._after_update.append(lambda s, f: accurate.account_update(s.select().first()))
+db.client._after_delete.append(lambda s: accurate.account_disable(s.select().first()))
+
+
+def update_clients(s, f):
+    reseller = s.select().first()
+    clients = db(db.client.reseller==reseller.id).select()
+    for client in clients:
+        if reseller.status=='enabled':
+            accurate.account_update(client)
+        else:
+            accurate.account_disable(client)
+
+
+def disable_clients(s):
+    reseller = s.select().first()
+    clients = db(db.client.reseller==reseller.id).select()
+    for client in clients:
+        accurate.account_disable(client)
+
+db.reseller._after_update.append(update_clients)
+db.reseller._after_delete.append(disable_clients)
