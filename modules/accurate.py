@@ -80,16 +80,13 @@ def rate_sheet_to_tp(rs, rs_rates):
         if len(r) == 0:
             r = 'OK<br>'
         response += r
-    return response
-
-def activate_tpid(tpid):
-    r = call('LoadTariffPlanFromStorDb', {'TPid': tpid, 'FlushDb': False, 'DryRun': False, 'Validate':True})
-    result = tpid + ' activation<br>'
+    r = call('ReloadCache', {"Tenant":tenant})
+    result += 'Cache reload<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
-    return result
+    return response
 
 def account_update(client):
     tenant = client.unique_code #rs.client.reseller.unique_code
@@ -114,6 +111,12 @@ def account_update(client):
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
+    r = call('UsersV1.ReloadUsers', {"Tenant":tenant})
+    result += 'User reload<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
     return result
 
 def account_disable(client):
@@ -128,7 +131,12 @@ def account_disable(client):
         result += 'OK<br>'
     return result
 
-def stats_to_tp(client, actions, triggers, stats):
+def stat_to_tp(stat, db):
+    client = stat.client
+    actions = db(db.act.client == client.id).select()
+    triggers = db(db.action_trigger.client == client.id).select()
+    tenant = client.unique_code
+
     result = 'Actions activation<br>'
     partial_result = 'OK<br>'
     action_dict = {}
@@ -137,10 +145,15 @@ def stats_to_tp(client, actions, triggers, stats):
         if action_tag not in action_dict:
             action_dict[action_tag] = []
         action_dict[action_tag].append({
-            'Identifier': '*'+action.action_type,
+            'Action': '*'+action.action_type,
+            'TOR':action.type_of_record,
+            'Params':action.params,
+            'ExecFilter':action.exec_filter,
+            'Filter':action.action_filter,
+            'Weight':action.weight,
         })
     for action_tag, action_body in action_dict.iteritems():
-        r = call('SetTpActions', {'TPid': client.unique_code + "_stats", 'ActionsId': action_tag, "Actions": action_body})
+        r = call('SetTpActionGroup', {'Tenant':tenant, 'Tag':action_tag, 'Actions':action_body})
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
             break
@@ -159,10 +172,13 @@ def stats_to_tp(client, actions, triggers, stats):
 	    'Recurrent': trigger.recurrent,
 	    'MinSleep': trigger.min_sleep,
             'MinQueuedItems': trigger.min_queued_items,
+            'TOR': trigger.type_of_record,
+            'Filter': trigger.trigger_filter,
 	    'ActionsId': trigger.act.name,
+            'Weight': trigger.weight,
         })
     for trigger_tag, trigger_body in trigger_dict.iteritems():
-        r = call('SetTpActionTriggers', {'TPid': client.name + "_stats", 'ActionTriggersId': trigger_tag, "ActionTriggers": trigger_body})
+        r = call('SetTpActionTrigger', {'Tenant': tenant, 'Tag': trigger_tag, 'Triggers': trigger_body})
         if r['result'] != 'OK':
             partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
             break
@@ -170,31 +186,31 @@ def stats_to_tp(client, actions, triggers, stats):
 
     result += 'Stats activation<br>'
     partial_result = 'OK<br>'
-    for st in stats:
-        r = call('SetTpCdrStats', {'TPid': client.name + "_stats", 'CdrStatsId': st.name, "CdrStats": [{'QueueLength': str(st.queue_length), 'TimeWindow': str(st.time_window), 'SaveInterval': str(st.save_interval), 'Metrics': ';'.join(st.metrics),
-        'SetupInterval': str(st.setup_interval), 'TORs': ';'.join(st.tors), 'CdrHosts': ';'.join(st.cdr_hosts), 'CdrSources': ';'.join(st.cdr_sources),
-        'ReqTypes': ';'.join(st.req_types), 'Directions': ';'.join(st.directions), 'Tenants': ';'.join(st.tenants), 'Categories': ';'.join(st.categories),
-        'Accounts': ';'.join(st.accounts), 'Subjects': ';'.join(st.subjects), 'DestinationIds': ';'.join(st.destination_ids),
-        'PddInterval': st.pdd_interval, 'UsageInterval': st.usage_interval, 'Suppliers': ';'.join(st.suppliers), 'DisconnectCauses': ';'.join(st.disconnect_causes),
-        'MediationRunIds': ';'.join(st.mediation_run_ids), 'RatedAccounts': ';'.join(st.rated_accounts),
-        'RatedSubject': ';'.join(st.rated_subjects), 'CostInterval': st.cost_interval, 'ActionTriggers': ';'.join(st.triggers)}]})
-        if r['result'] != 'OK':
-            partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-            break
+    r = call('SetTpCdrStats', {
+        'Tenant': tenant,
+        'Tag': stat.name,
+        'QueueLength': stat.queue_length,
+        'TimeWindow': stat.time_window,
+        'SaveInterval': stat.save_interval,
+        'Metrics': stat.metrics,
+        'Filter': stat.stats_filter,
+        'ActionTriggerTags': stat.triggers,
+        'Disabled': stat.status == 'disabled',
+    })
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
-    return result
-
-def reload_stats(stats):
-    result = 'Stats realod<br>'
+    result += 'Stats realod<br>'
     partial_result = 'OK<br>'
     # reload
-    r = call('CDRStatsV1.ReloadQueues', {'StatsQueueIds':[st.name for st in stats]})
+    r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[stat.name]})
+    print "RESULT: ", r
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
 
     #reset
-    r = call('CDRStatsV1.ResetQueues', {'StatsQueueIds':[st.name for st in stats]})
+    r = call('CDRStatsV1.ResetQueues', {'Tenant':tenant, 'IDs':[stat.name]})
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
 

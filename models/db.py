@@ -241,16 +241,19 @@ db.define_table(
     format='%(code_name)s_%(code)s'
 )
 
-#ActionsId[0],Action[1],ExtraParameters[2],Filter[3],BalanceId[4],BalanceType[5],Directions[6],Categories[7],DestinationIds[8],RatingSubject[9],SharedGroup[10],ExpiryTime[11],TimingIds[12],Units[13],BalanceWeight[14],BalanceBlocker[15],BalanceDisabled[16],Weight[17]
 db.define_table(
     'act',
     Field('client', 'reference client', required=True, readable=False, writable=False),
     Field('name', 'string', unique=False, required=True, requires=IS_NOT_EMPTY()),
     Field('action_type', 'string', default='log', requires=IS_IN_SET(('log',))),
+    Field('type_of_record', 'string'),
+    Field('params', 'string'),
+    Field('exec_filter', 'string'),
+    Field('action_filter', 'string'),
+    Field('weight', 'double', default=10),
     format='%(name)s'
 )
 
-#Tag[0],UniqueId[1],ThresholdType[2],ThresholdValue[3],Recurrent[4],MinSleep[5],ExpiryTime[6],ActivationTime[7],BalanceTag[8],BalanceType[9],BalanceDirections[10],BalanceCategories[11],BalanceDestinationIds[12],BalanceRatingSubject[13],BalanceSharedGroup[14],BalanceExpiryTime[15],BalanceTimingIds[16],BalanceWeight[17],BalanceBlocker[18],BalanceDisabled[19],StatsMinQueuedItems[20],ActionsId[21],Weight[22]
 db.define_table(
     'action_trigger',
     Field('client', 'reference client', required=True, readable=False, writable=False),
@@ -260,7 +263,10 @@ db.define_table(
     Field('recurrent', 'boolean'),
     Field('min_sleep', 'string'),
     Field('min_queued_items', 'integer'),
+    Field('type_of_record', 'string'),
+    Field('trigger_filter', 'string'),
     Field('act', 'reference act', required=True),
+    Field('weight', 'double', default=10),
     format='%(name)s'
 )
 
@@ -272,26 +278,9 @@ db.define_table(
     Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
     Field('save_interval', 'string', default="60s", comment=T('save interval (s/m/h)')),
     Field('metrics', 'list:string', requires=IS_IN_SET(('ASR', 'ACD', 'TCD', 'ACC', 'TCC', 'PDD', 'DDC'), multiple=True)),
-    Field('setup_interval', 'string', comment=T('cdr setup interval (start;end)')),
-    Field('tors', 'list:string'),
-    Field('cdr_hosts', 'list:string'),
-    Field('cdr_sources', 'list:string'),
-    Field('req_types', 'list:string'),
-    Field('directions', 'list:string'),
-    Field('tenants', 'list:string', readable=False, writable=False),
-    Field('categories', 'list:string'),
-    Field('accounts', 'list:string', readable=False, writable=False),
-    Field('subjects', 'list:string'),
-    Field('destination_ids', 'list:string'),
-    Field('pdd_interval', 'string'),
-    Field('usage_interval', 'string'),
-    Field('suppliers', 'list:string'),
-    Field('disconnect_causes', 'list:string'),
-    Field('mediation_run_ids', 'list:string'),
-    Field('rated_accounts', 'list:string'),
-    Field('rated_subjects', 'list:string'),
-    Field('cost_interval', 'string'),
+    Field('stats_filter', 'string'),
     Field('triggers', 'list:string'),
+    Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )
 
@@ -314,10 +303,32 @@ db.define_table(
 #    (db.act.client == db.user_client.client_id) &
 #    (auth.user_id == db.user_client.user_id)), db.act.id, '%(name)s')
 
+
+def disable_account(s):
+    client = s.select().first()
+    accurate.account_disable(client)
+    # disable all stats
+    stats = db(db.stats.client == client.id).select()
+    for stat in stats:
+        stat.status = 'disabled'
+        accurate.stat_to_tp(stat, db)
+
 db.client._after_insert.append(lambda f, id: accurate.account_update(db.client[id]))
 db.client._after_update.append(lambda s, f: accurate.account_update(s.select().first()))
-db.client._after_delete.append(lambda s: accurate.account_disable(s.select().first()))
+db.client._before_delete.append(disable_account)
 
+def update_stats(s,f):
+    accurate.stat_to_tp(s.select().first(), db)
+
+
+def disable_stat(s):
+    stat = s.select().first()
+    stat.status = 'disabled'
+    accurate.stat_to_tp(stat, db)
+
+db.stats._after_insert.append(lambda f, id: accurate.stat_to_tp(db.stats[id], db))
+db.stats._after_update.append(update_stats)
+db.stats._before_delete.append(disable_stat)
 
 def update_clients(s, f):
     reseller = s.select().first()
@@ -336,4 +347,4 @@ def disable_clients(s):
         accurate.account_disable(client)
 
 db.reseller._after_update.append(update_clients)
-db.reseller._after_delete.append(disable_clients)
+db.reseller._before_delete.append(disable_clients)

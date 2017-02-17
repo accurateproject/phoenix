@@ -19,26 +19,9 @@
       <th>{{=T('Time window')}}</th>
       <th>{{=T('Save interval')}}</th>
       <th>{{=T('Metrics')}}</th>
-      <th>{{=T('Setup Interval')}}</th>
-      <th>{{=T('TORs')}}</th>
-      <th>{{=T('Cdr Hosts')}}</th>
-      <th>{{=T('Cdr Sources')}}</th>
-      <th>{{=T('Request Types')}}</th>
-      <th>{{=T('Directions')}}</th>
-      <th>{{=T('Tenants')}}</th>
-      <th>{{=T('Categories')}}</th>
-      <th>{{=T('Accounts')}}</th>
-      <th>{{=T('Subjects')}}</th>
-      <th>{{=T('Destination Codes')}}</th>
-      <th>{{=T('Pdd Interval')}}</th>
-      <th>{{=T('Usage Interval')}}</th>
-      <th>{{=T('Suppliers')}}</th>
-      <th>{{=T('Disconnect Causes')}}</th>
-      <th>{{=T('Mediation RunIds')}}</th>
-      <th>{{=T('Rated Accounts')}}</th>
-      <th>{{=T('Rated Subjects')}}</th>
-      <th>{{=T('Cost Interval')}}</th>
+      <th>{{=T('Filter')}}</th>
       <th>{{=T('Triggers')}}</th>
+      <th>{{=T('Status')}}</th>
     </tr>
   </thead>
   <tbody>
@@ -49,26 +32,9 @@
       <td>{{=st.time_window}}</td>
       <td>{{=st.save_interval}}</td>
       <td>{{=', '.join(st.metrics)}}</td>
-      <td>{{=st.setup_interval}}</td>
-      <td>{{=', '.join(st.tors)}}</td>
-      <td>{{=', '.join(st.cdr_hosts)}}</td>
-      <td>{{=', '.join(st.cdr_sources)}}</td>
-      <td>{{=', '.join(st.req_types)}}</td>
-      <td>{{=', '.join(st.directions)}}</td>
-      <td>{{=', '.join(st.tenants)}}</td>
-      <td>{{=', '.join(st.categories)}}</td>
-      <td>{{=', '.join(st.accounts)}}</td>
-      <td>{{=', '.join(st.subjects)}}</td>
-      <td>{{=', '.join(st.destination_ids)}}</td>
-      <td>{{=st.pdd_interval}}</td>
-      <td>{{=st.usage_interval}}</td>
-      <td>{{=', '.join(st.suppliers)}}</td>
-      <td>{{=', '.join(st.disconnect_causes)}}</td>
-      <td>{{=', '.join(st.mediation_run_ids)}}</td>
-      <td>{{=', '.join(st.rated_accounts)}}</td>
-      <td>{{=', '.join(st.rated_subjects)}}</td>
-      <td>{{=st.cost_interval}}</td>
+      <td>{{=st.stats_filter}}</td>
       <td>{{=', '.join(st.triggers)}}</td>
+      <td>{{=st.status}}</td>
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
 	  {{=A(T('edit'), _href=URL('default', 'stats', args=(st.client.id, st.id)), _class="btn btn-link")}}

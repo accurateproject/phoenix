@@ -17,13 +17,14 @@ def queueids():
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def metrics():
     session.forget(response)
-    client_id = request.args(0)
-    if not accessible_client(client_id):
+    client = db.client(request.args(0))
+    if not accessible_client(client.id):
         redirect(URL('user', 'not_autorized'))
-    stats = db(db.stats.client == client_id).select(db.stats.name)
+    stats = db(db.stats.client == client.id).select(db.stats.name)
     metrics = {}
     for q in stats:
-        r = accurate.call("CDRStatsV1.GetMetrics", dict(StatsQueueId = q.name))
+        r = accurate.call("CDRStatsV1.GetMetrics", dict(Tenant = client.unique_code, ID = q.name))
+        print "r: ", r
         metrics[q.name] = r['error'] if r['error'] else r['result']
 
     return metrics
@@ -148,23 +149,5 @@ def activate_rate_sheet():
 
     rate_sheet.client.active_rate_sheet = rate_sheet.id
     rate_sheet.client.update_record()
-    session.flash = XML(resp)
-    redirect(request.env.http_referer)
-
-
-@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def activate_stats():
-    client_id = request.args(0) or redirect('index')
-    client = db.client[client_id]
-    if not accessible_client(client_id):
-        redirect(URL('user', 'not_autorized'))
-    client_name = accurate.upper_under(client.name)
-
-    actions = db(db.act.client == client_id).select()
-    triggers = db(db.action_trigger.client == client_id).select()
-    stats = db(db.stats.client == client_id).select()
-    resp = accurate.stats_to_tp(client, actions, triggers, stats)
-    resp +=  accurate.activate_tpid(client_name + "_stats")
-    resp += accurate.reload_stats(stats)
     session.flash = XML(resp)
     redirect(request.env.http_referer)

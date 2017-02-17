@@ -108,8 +108,6 @@ def stats():
     if stats_id is not None:
         stats = db.stats[stats_id]
         __check_stats(stats)
-    db.stats.tenants.default = [client.unique_code]
-    db.stats.accounts.default = [client.unique_code]
     db.stats.client.default = client.id
     form = crud.update(db.stats, request.args(1), next=URL('default', 'stats', args=client.id))
     stats = db(db.stats.client == client.id).select()
