@@ -74,7 +74,6 @@ def rate_sheet_to_tp(rs, rs_rates):
         response += key + '<br>'
         r = ''
         for result in result_list:
-            print result
             if result['result'] != 'OK':
                 r += 'result: %s error: %s <br>' % (result['result'], result['error'])
         if len(r) == 0:
@@ -187,7 +186,6 @@ def monitor_to_tp(monitor, db):
     partial_result = 'OK<br>'
     # reload
     r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
-    #print "RESULT: ", r
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
 

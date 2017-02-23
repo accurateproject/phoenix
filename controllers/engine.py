@@ -24,7 +24,6 @@ def metrics():
     metrics = {}
     for mon in monitors:
         r = accurate.call("CDRStatsV1.GetMetrics", dict(Tenant = client.unique_code, ID = mon.unique_code))
-        print "r: ", r
         metrics[mon.unique_code] = r['error'] if r['error'] else r['result']
 
     return metrics
