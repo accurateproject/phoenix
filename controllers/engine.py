@@ -20,12 +20,12 @@ def metrics():
     client = db.client(request.args(0))
     if not accessible_client(client.id):
         redirect(URL('user', 'not_autorized'))
-    stats = db(db.stats.client == client.id).select(db.stats.name)
+    monitors = db(db.monitor.client == client.id).select(db.monitor.unique_code)
     metrics = {}
-    for q in stats:
-        r = accurate.call("CDRStatsV1.GetMetrics", dict(Tenant = client.unique_code, ID = q.name))
+    for mon in monitors:
+        r = accurate.call("CDRStatsV1.GetMetrics", dict(Tenant = client.unique_code, ID = mon.unique_code))
         print "r: ", r
-        metrics[q.name] = r['error'] if r['error'] else r['result']
+        metrics[mon.unique_code] = r['error'] if r['error'] else r['result']
 
     return metrics
 

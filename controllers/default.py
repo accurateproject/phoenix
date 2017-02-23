@@ -11,9 +11,6 @@ def index():
 
 @auth.requires_membership('admin')
 def resellers():
-    if request.args(0): # update
-        db.reseller.unique_code.readable = False
-        db.reseller.unique_code.writable = False
     form = crud.update(db.reseller, request.args(0), onaccept=give_reseller_owner_permissions)
     query = auth.accessible_query('read', db.reseller, auth.user_id)
     resellers = db(query).select()
@@ -27,9 +24,6 @@ def clients():
         redirect(URL('user', 'not_autorized'))
     db.client.reseller.default = reseller_id
     db.client.nb_prefix.requires=IS_NOT_IN_DB(db(db.client.reseller==reseller_id), 'client.nb_prefix', error_message=T('reseller has already a client with this prefix'))
-    if request.vars['edit']:
-        db.client.unique_code.readable = False
-        db.client.unique_code.writable = False
     onaccept = give_client_owner_permissions if auth.has_membership('reseller') else None
     form = crud.update(db.client, request.vars['edit'], next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
 
@@ -42,8 +36,6 @@ def my_clients():
     client_id = request.vars['edit']
     if client_id:
         show_form = True
-        db.client.unique_code.readable = False
-        db.client.unique_code.writable = False
         form = crud.update(db.client, client_id, next=URL('default', 'my_clients'))
     else:
         form = None
@@ -59,9 +51,6 @@ def rate_sheets():
     if not accessible_client(client_id):
         redirect(URL('user', 'not_autorized'))
     db.rate_sheet.client.default = client.id
-    if request.args(1): # update
-        db.rate_sheet.unique_code.readable = False
-        db.rate_sheet.unique_code.writable = False
     form = crud.update(db.rate_sheet, request.args(1), next=URL('default', 'rate_sheets', args=client.id))
     rate_sheets = db(db.rate_sheet.client == client.id).select()
     return dict(form=form, rate_sheets=rate_sheets, client=client)
@@ -101,43 +90,17 @@ def rates():
     return dict(form=form, rate_sheet=rate_sheet, rates=rates)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def stats():
+def monitor():
     client_id = request.args(0) or redirect('index')
     client = db.client[client_id] or redirect(URL('default', 'index'))
-    stats_id = request.args(1)
-    if stats_id is not None:
-        stats = db.stats[stats_id]
-        __check_stats(stats)
-    db.stats.client.default = client.id
-    form = crud.update(db.stats, request.args(1), next=URL('default', 'stats', args=client.id))
-    stats = db(db.stats.client == client.id).select()
-    return dict(form=form, client=client, stats=stats)
-
-@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def triggers():
-    client_id = request.args(0) or redirect('index')
-    client = db.client[client_id] or redirect(URL('default', 'index'))
-    trigger_id = request.args(1)
-    if trigger_id is not None:
-        trigger = db.action_trigger[trigger_id]
-        __check_trigger(trigger)
-    db.action_trigger.client.default = client.id
-    form = crud.update(db.action_trigger, request.args(1), next=URL('default', 'triggers', args=client.id))
-    triggers = db(db.action_trigger.client == client.id).select()
-    return dict(form=form, client=client, triggers=triggers)
-
-@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def actions():
-    client_id = request.args(0) or redirect('index')
-    client = db.client[client_id] or redirect(URL('default', 'index'))
-    action_id = request.args(1)
-    if action_id is not None:
-        action = db.act[action_id]
-        __check_action(action)
-    db.act.client.default = client.id
-    form = crud.update(db.act, request.args(1), next=URL('default', 'actions', args=client.id))
-    actions = db(db.act.client == client.id).select()
-    return dict(form=form, client=client, actions=actions)
+    monitor_id = request.args(1)
+    if monitor_id is not None:
+        monitor = db.monitor[monitor_id]
+        __check_monitor(monitor)
+    db.monitor.client.default = client.id
+    form = crud.update(db.monitor, request.args(1), next=URL('default', 'monitor', args=client.id))
+    monitors = db(db.monitor.client == client.id).select()
+    return dict(form=form, client=client, monitors=monitors)
 
 def user():
     """

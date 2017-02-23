@@ -40,23 +40,11 @@ def initialize_permissions():
     auth.add_permission(admin_group_id, 'update', db.rate)
     auth.add_permission(admin_group_id, 'delete', db.rate)
 
-    auth.add_permission(admin_group_id, 'create', db.stats)
-    auth.add_permission(admin_group_id, 'select', db.stats)
-    auth.add_permission(admin_group_id, 'read', db.stats)
-    auth.add_permission(admin_group_id, 'update', db.stats)
-    auth.add_permission(admin_group_id, 'delete', db.stats)
-
-    auth.add_permission(admin_group_id, 'create', db.action_trigger)
-    auth.add_permission(admin_group_id, 'select', db.action_trigger)
-    auth.add_permission(admin_group_id, 'read', db.action_trigger)
-    auth.add_permission(admin_group_id, 'update', db.action_trigger)
-    auth.add_permission(admin_group_id, 'delete', db.action_trigger)
-
-    auth.add_permission(admin_group_id, 'create', db.act)
-    auth.add_permission(admin_group_id, 'select', db.act)
-    auth.add_permission(admin_group_id, 'read', db.act)
-    auth.add_permission(admin_group_id, 'update', db.act)
-    auth.add_permission(admin_group_id, 'delete', db.act)
+    auth.add_permission(admin_group_id, 'create', db.monitor)
+    auth.add_permission(admin_group_id, 'select', db.monitor)
+    auth.add_permission(admin_group_id, 'read', db.monitor)
+    auth.add_permission(admin_group_id, 'update', db.monitor)
+    auth.add_permission(admin_group_id, 'delete', db.monitor)
 
     auth.add_permission(admin_group_id, 'create', db.invoice)
     auth.add_permission(admin_group_id, 'select', db.invoice)
@@ -76,23 +64,11 @@ def initialize_permissions():
     auth.add_permission(client_group_id, 'update', db.rate)
     auth.add_permission(client_group_id, 'delete', db.rate)
 
-    auth.add_permission(client_group_id, 'create', db.stats)
-    auth.add_permission(client_group_id, 'select', db.stats)
-    auth.add_permission(client_group_id, 'read', db.stats)
-    auth.add_permission(client_group_id, 'update', db.stats)
-    auth.add_permission(client_group_id, 'delete', db.stats)
-
-    auth.add_permission(client_group_id, 'create', db.action_trigger)
-    auth.add_permission(client_group_id, 'select', db.action_trigger)
-    auth.add_permission(client_group_id, 'read', db.action_trigger)
-    auth.add_permission(client_group_id, 'update', db.action_trigger)
-    auth.add_permission(client_group_id, 'delete', db.action_trigger)
-
-    auth.add_permission(client_group_id, 'create', db.act)
-    auth.add_permission(client_group_id, 'select', db.act)
-    auth.add_permission(client_group_id, 'read', db.act)
-    auth.add_permission(client_group_id, 'update', db.act)
-    auth.add_permission(client_group_id, 'delete', db.act)
+    auth.add_permission(client_group_id, 'create', db.monitor)
+    auth.add_permission(client_group_id, 'select', db.monitor)
+    auth.add_permission(client_group_id, 'read', db.monitor)
+    auth.add_permission(client_group_id, 'update', db.monitor)
+    auth.add_permission(client_group_id, 'delete', db.monitor)
 
     auth.add_permission(client_group_id, 'create', db.invoice)
     auth.add_permission(client_group_id, 'select', db.invoice)
@@ -173,29 +149,11 @@ def __check_rate_sheet(rate_sheet):
           (db.rate_sheet.id == rate_sheet.id)).isempty():
         raise HTTP(403, "Not authorized")
 
-def __check_stats(stats):
-    if not stats:
+def __check_monitor(monitor):
+    if not monitor:
         raise HTTP(404, "Not found")
     # check  it belongs to a client owned by the current user
     if db(auth.accessible_query('read', db.client, auth.user_id) &
-          (db.client.id == db.stats.client) &
-          (db.stats.id == stats.id)).isempty():
-        raise HTTP(403, "Not authorized")
-
-def __check_trigger(trigger):
-    if not trigger:
-        raise HTTP(404, "Not found")
-    # check  it belongs to a client owned by the current user
-    if db(auth.accessible_query('read', db.client, auth.user_id) &
-          (db.client.id == db.action_trigger.client) &
-          (db.action_trigger.id == trigger.id)).isempty():
-        raise HTTP(403, "Not authorized")
-
-def __check_action(action):
-    if not action:
-        raise HTTP(404, "Not found")
-    # check  it belongs to a client owned by the current user
-    if db(auth.accessible_query('read', db.client, auth.user_id) &
-          (db.client.id == db.act.client) &
-          (db.act.id == action.id)).isempty():
+          (db.client.id == db.monitor.client) &
+          (db.monitor.id == monitor.id)).isempty():
         raise HTTP(403, "Not authorized")

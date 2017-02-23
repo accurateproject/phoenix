@@ -81,11 +81,11 @@ def rate_sheet_to_tp(rs, rs_rates):
             r = 'OK<br>'
         response += r
     r = call('ReloadCache', {"Tenant":tenant})
-    result += 'Cache reload<br>'
+    response += 'Cache reload<br>'
     if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+        response = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
-        result += 'OK<br>'
+        response += 'OK<br>'
     return response
 
 def account_update(client):
@@ -131,71 +131,53 @@ def account_disable(client):
         result += 'OK<br>'
     return result
 
-def stat_to_tp(stat, db):
-    client = stat.client
-    actions = db(db.act.client == client.id).select()
-    triggers = db(db.action_trigger.client == client.id).select()
-    tenant = client.unique_code
+def monitor_to_tp(monitor, db):
+    tenant = monitor.client.unique_code
 
-    result = 'Actions activation<br>'
+    monitor_name = monitor.unique_code
+    action_name = "act_"+monitor_name
+    trigger_name = "tr_"+monitor_name
+
+    result = 'Monitor activation<br>'
     partial_result = 'OK<br>'
-    action_dict = {}
-    for action in actions:
-        action_tag = action.name.replace(' ', '_')
-        if action_tag not in action_dict:
-            action_dict[action_tag] = []
-        action_dict[action_tag].append({
-            'Action': '*'+action.action_type,
-            'TOR':action.type_of_record,
-            'Params':action.params,
-            'ExecFilter':action.exec_filter,
-            'Filter':action.action_filter,
-            'Weight':action.weight,
-        })
-    for action_tag, action_body in action_dict.iteritems():
-        r = call('SetTpActionGroup', {'Tenant':tenant, 'Tag':action_tag, 'Actions':action_body})
-        if r['result'] != 'OK':
-            partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-            break
+    if monitor.triggered_action == "notify":
+        r = call('SetTpActionGroup', {'Tenant':tenant, 'Tag':action_name, 'Actions':[
+            {'Action': '*log'},
+            {'Action': '*call_url_async', 'Params':'url'}
+        ]})
+
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
-    result += 'Trigger activation<br>'
     partial_result = 'OK<br>'
-    trigger_dict = {}
-    for trigger in triggers:
-        trigger_tag = trigger.name.replace(' ', '_')
-        if trigger_tag not in trigger_dict:
-            trigger_dict[trigger_tag] = []
-        trigger_dict[trigger_tag].append({
-            'ThresholdType': '*'+trigger.threshold_type,
-	    'ThresholdValue': trigger.threshold_value,
-	    'Recurrent': trigger.recurrent,
-	    'MinSleep': trigger.min_sleep,
-            'MinQueuedItems': trigger.min_queued_items,
-            'TOR': trigger.type_of_record,
-            'Filter': trigger.trigger_filter,
-	    'ActionsId': trigger.act.name,
-            'Weight': trigger.weight,
-        })
-    for trigger_tag, trigger_body in trigger_dict.iteritems():
-        r = call('SetTpActionTrigger', {'Tenant': tenant, 'Tag': trigger_tag, 'Triggers': trigger_body})
-        if r['result'] != 'OK':
-            partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-            break
+    min_sleep = monitor.min_sleep.strip()
+    r = call('SetTpActionTrigger', {'Tenant': tenant, 'Tag': trigger_name, 'Triggers': [
+       {
+            'ThresholdType': '*'+monitor.threshold_type,
+	    'ThresholdValue': monitor.threshold_value,
+	    'Recurrent': min_sleep != '',
+	    'MinSleep': min_sleep,
+            'MinQueuedItems': 100,
+	    'ActionsTag': action_name,
+            'Weight': 10,
+        }
+    ]})
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
-    result += 'Stats activation<br>'
     partial_result = 'OK<br>'
     r = call('SetTpCdrStats', {
         'Tenant': tenant,
-        'Tag': stat.name,
-        'QueueLength': stat.queue_length,
-        'TimeWindow': stat.time_window,
-        'SaveInterval': stat.save_interval,
-        'Metrics': stat.metrics,
-        'Filter': stat.stats_filter,
-        'ActionTriggerTags': stat.triggers,
-        'Disabled': stat.status == 'disabled',
+        'Tag': monitor_name,
+        'QueueLength': monitor.queue_length,
+        'TimeWindow': monitor.time_window,
+        'SaveInterval': '30s',
+        'Metrics': monitor.metrics,
+        'Filter': monitor.monitor_filter,
+        'ActionTriggerTags': [trigger_name],
+        'Disabled': monitor.status == 'disabled',
     })
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
@@ -204,13 +186,13 @@ def stat_to_tp(stat, db):
     result += 'Stats realod<br>'
     partial_result = 'OK<br>'
     # reload
-    r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[stat.name]})
-    print "RESULT: ", r
+    r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
+    #print "RESULT: ", r
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
 
     #reset
-    r = call('CDRStatsV1.ResetQueues', {'Tenant':tenant, 'IDs':[stat.name]})
+    r = call('CDRStatsV1.ResetQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
 

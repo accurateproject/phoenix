@@ -68,9 +68,7 @@
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL(args=client.reseller.id, vars={'edit': client.id, 'reseller_id': client.reseller.id}), _class="btn btn-link")}}
           {{=A(T('rate sheets'), _href=URL('default', 'rate_sheets', args=client.id), _class="btn btn-link")}}
-          {{=A(T('statistics'), _href=URL('default', 'stats', args=client.id), _class="btn btn-link")}}
-          {{=A(T('triggers'), _href=URL('default', 'triggers', args=client.id), _class="btn btn-link")}}
-          {{=A(T('actions'), _href=URL('default', 'actions', args=client.id), _class="btn btn-link")}}
+          {{=A(T('monitoring'), _href=URL('default', 'monitor', args=client.id), _class="btn btn-link")}}
           {{=A(T('CDRs'), _href=URL('engine', 'cdrs', args=client.id), _class="btn btn-link")}}
 	  {{=A(T('invoices'), _href=URL('accounting', 'invoices', args=client.id), _class="btn btn-link")}}
         </div>

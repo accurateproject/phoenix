@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import uuid
+from uuid import uuid4
 
 # -------------------------------------------------------------------------
 # This scaffolding model makes your app work on Google App Engine too
@@ -130,7 +130,7 @@ def check_reseller_gateways(form):
 from gluon.tools import Crud
 crud = Crud(db)
 crud.settings.auth = auth
-crud.settings.formstyle = 'table3cols' #or 'table2cols' or 'divs' or 'ul'
+crud.settings.formstyle = myconf.get('forms.formstyle')
 crud.settings.create_onvalidation.client.append(check_client_prefix_uniqueness)
 crud.settings.update_onvalidation.client.append(check_client_prefix_uniqueness)
 crud.settings.create_onvalidation.reseller.append(check_reseller_gateways)
@@ -190,11 +190,12 @@ import accurate
 db.define_table(
     'reseller',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
-    Field('unique_code', 'string',  required=True, unique=True, length=4, requires=[IS_MATCH('^\w{2,4}$'), IS_NOT_IN_DB(db, 'reseller.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
+    Field('unique_code', compute=lambda r: "rs_"+str(uuid4())[:6]),
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('gateways', 'list:string'),
     Field('address', 'text', length=1000),
+    Field('email', 'string', requires = IS_EMAIL(error_message='invalid email!')),
     Field('tax_id', 'string'),
     Field('reg_id', 'string'),
     format='%(name)s'
@@ -203,7 +204,7 @@ db.define_table(
 db.define_table(
     'client',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
-    Field('unique_code', 'string',  required=True, unique=True, length=4, requires=[IS_MATCH('^\w{2,4}$'), IS_NOT_IN_DB(db, 'client.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
+    Field('unique_code', compute=lambda r: "cl_"+str(uuid4())[:6]),
     Field('reseller', 'reference reseller', readable=False, writable=False),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
@@ -211,6 +212,7 @@ db.define_table(
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('active_rate_sheet', 'reference rate_sheet', readable=False, writable=False),
     Field('address', 'text', length=1000),
+    Field('email', 'string', requires = IS_EMAIL(error_message='invalid email!')),
     Field('invoice_period', 'integer', required=True, default=1, requires=IS_IN_SET([i for i in range(1,60)]), widget=SQLFORM.widgets.options.widget),
     Field('payment_period', 'integer', required=True, default=1, requires=IS_IN_SET([i for i in range(1,60)]), widget=SQLFORM.widgets.options.widget),
     Field('tax_id', 'string'),
@@ -222,7 +224,7 @@ db.define_table(
     'rate_sheet',
     Field('client', 'reference client', comment=T('select the client'), readable=False, writable=False),
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'rate_sheet.name')]),
-    Field('unique_code', 'string', required=True, unique=True, length=4, requires=[IS_MATCH('^\w{2,4}$'), IS_NOT_IN_DB(db, 'client.unique_code')], comment=T('internal unique identifyer (4 alpha-numeric characters)')),
+    Field('unique_code', compute=lambda r: "rs_"+str(uuid4())[:6]),
     Field('effective_date', 'datetime', default=request.now),
     Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
@@ -241,45 +243,20 @@ db.define_table(
     format='%(code_name)s_%(code)s'
 )
 
-db.define_table(
-    'act',
-    Field('client', 'reference client', required=True, readable=False, writable=False),
-    Field('name', 'string', unique=False, required=True, requires=IS_NOT_EMPTY()),
-    Field('action_type', 'string', default='log', requires=IS_IN_SET(('log',))),
-    Field('type_of_record', 'string'),
-    Field('params', 'string'),
-    Field('exec_filter', 'string'),
-    Field('action_filter', 'string'),
-    Field('weight', 'double', default=10),
-    format='%(name)s'
-)
 
 db.define_table(
-    'action_trigger',
+    'monitor',
     Field('client', 'reference client', required=True, readable=False, writable=False),
-    Field('name', 'string', unique=False, required=True, requires=IS_NOT_EMPTY()),
-    Field('threshold_type', 'string', requires=IS_IN_SET(('min_asr', 'max_asr', 'min_acd', 'max_acd', 'min_tcd', 'max_tcd', 'min_acc', 'max_acc', 'min_tcc', 'max_tcc', 'min_ddc', 'max_ddc'))),
-    Field('threshold_value', 'double'),
-    Field('recurrent', 'boolean'),
-    Field('min_sleep', 'string'),
-    Field('min_queued_items', 'integer'),
-    Field('type_of_record', 'string'),
-    Field('trigger_filter', 'string'),
-    Field('act', 'reference act', required=True),
-    Field('weight', 'double', default=10),
-    format='%(name)s'
-)
-
-db.define_table(
-    'stats',
-    Field('client', 'reference client', required=True, readable=False, writable=False),
-    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'stats.name')]),
+    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'monitor.name')]),
+    Field('unique_code', compute=lambda r: "mt_"+str(uuid4())[:6]),
     Field('queue_length', 'integer', required=True),
     Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
-    Field('save_interval', 'string', default="60s", comment=T('save interval (s/m/h)')),
     Field('metrics', 'list:string', requires=IS_IN_SET(('ASR', 'ACD', 'TCD', 'ACC', 'TCC', 'PDD', 'DDC'), multiple=True)),
-    Field('stats_filter', 'string'),
-    Field('triggers', 'list:string'),
+    Field('monitor_filter', 'string'),
+    Field('threshold_type', 'string', requires=IS_IN_SET(('min_asr', 'max_asr', 'min_acd', 'max_acd', 'min_tcd', 'max_tcd', 'min_acc', 'max_acc', 'min_tcc', 'max_tcc', 'min_ddc', 'max_ddc'))),
+    Field('threshold_value', 'double'),
+    Field('min_sleep', 'string', comment=T('set a duration s/m/h to make to make it recurrent, leave empty for one time')),
+    Field('triggered_action', 'string', requires=IS_IN_SET(('notify', 'disable_client'))),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     format='%(name)s'
 )
@@ -287,7 +264,7 @@ db.define_table(
 db.define_table(
     'invoice',
     Field('statement_no', 'string', required=True, requires=IS_NOT_EMPTY()),
-    Field('uuid', 'string', readable=False, writable=False, default=lambda:str(uuid.uuid4())),
+    Field('uuid', 'string', readable=False, writable=False, default=lambda:str(uuid4())),
     Field('from_client', 'reference client', required=True, readable=False, writable=False),
     Field('to_client', 'reference client', required=True, readable=False, writable=False),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled', 'paid')), default='enabled'),
@@ -299,36 +276,31 @@ db.define_table(
     format='%(statement_no)s'
 )
 
-#db.action_trigger.act.requires = IS_IN_DB(db(
-#    (db.act.client == db.user_client.client_id) &
-#    (auth.user_id == db.user_client.user_id)), db.act.id, '%(name)s')
-
-
 def disable_account(s):
     client = s.select().first()
     accurate.account_disable(client)
-    # disable all stats
-    stats = db(db.stats.client == client.id).select()
-    for stat in stats:
-        stat.status = 'disabled'
-        accurate.stat_to_tp(stat, db)
+    # disable all monitor
+    monitors = db(db.monitor.client == client.id).select()
+    for monitor in monitors:
+        monitor.status = 'disabled'
+        accurate.monitor_to_tp(stat, db)
 
 db.client._after_insert.append(lambda f, id: accurate.account_update(db.client[id]))
 db.client._after_update.append(lambda s, f: accurate.account_update(s.select().first()))
 db.client._before_delete.append(disable_account)
 
-def update_stats(s,f):
-    accurate.stat_to_tp(s.select().first(), db)
+def update_monitors(s,f):
+    accurate.monitor_to_tp(s.select().first(), db)
 
 
-def disable_stat(s):
-    stat = s.select().first()
-    stat.status = 'disabled'
-    accurate.stat_to_tp(stat, db)
+def disable_monitor(s):
+    monitor = s.select().first()
+    monitor.status = 'disabled'
+    accurate.monitor_to_tp(monitor, db)
 
-db.stats._after_insert.append(lambda f, id: accurate.stat_to_tp(db.stats[id], db))
-db.stats._after_update.append(update_stats)
-db.stats._before_delete.append(disable_stat)
+db.monitor._after_insert.append(lambda f, id: accurate.monitor_to_tp(db.monitor[id], db))
+db.monitor._after_update.append(update_monitors)
+db.monitor._before_delete.append(disable_monitor)
 
 def update_clients(s, f):
     reseller = s.select().first()
