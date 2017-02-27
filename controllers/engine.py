@@ -126,10 +126,10 @@ def cdrs():
 
     params['offset'], params['limit'] = page*items_per_page, items_per_page+1
 
-    if not auth.has_membership('admin'):
-        params['tenants'] = [client.unique_code]
-        params['accounts'] = [client.unique_code]
-        params['subjects'] = [client.unique_code]
+    params['run_ids'] = ['*default']
+    params['tenants'] = [client.unique_code]
+    params['accounts'] = [client.unique_code]
+    params['subjects'] = [client.unique_code]
 
     cdrs = []
     r = accurate.call("GetCdrs",  params)
@@ -140,6 +140,7 @@ def cdrs():
         cdrs = r['result']
 
     # prepare the params for show
+    if 'run_ids' in params: del params['run_ids']
     if 'tenants' in params: del params['tenants']
     if 'subjects' in params: del params['subjects']
     if 'accounts' in params: del params['accounts']

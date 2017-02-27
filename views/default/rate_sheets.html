@@ -11,7 +11,6 @@
   <thead>
     <tr>
       <th>{{=T('Name')}}</th>
-      <th>{{=T('Unique code')}}</th>
       <th>{{=T('Client')}}</th>
       <th>{{=T('Effective date')}}</th>
       <th>{{=T('Status')}}</th>
@@ -23,7 +22,6 @@
     {{for rate_sheet in rate_sheets:}}
     <tr>
       <td>{{=rate_sheet.name}}</td>
-      <td>{{=rate_sheet.unique_code}}</td>
       <td>{{=rate_sheet.client.name}}</td>
       <td>{{=rate_sheet.effective_date}}</td>
       <td>{{=rate_sheet.status}}</td>
