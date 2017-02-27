@@ -4,7 +4,6 @@ import requests
 from gluon.contrib.appconfig import AppConfig
 from gluon import current
 
-
 myconf = AppConfig(reload=False)
 
 def upper_under(text):
@@ -90,7 +89,6 @@ def rate_sheet_to_tp(rs, rs_rates):
 def account_update(client):
     tenant = client.unique_code #rs.client.reseller.unique_code
     client_name = client.unique_code
-
     r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "AllowNegative":True, "Disabled":client.status == 'disabled'})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
@@ -166,6 +164,9 @@ def monitor_to_tp(monitor, db):
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
+    filter = "{'RunID':'*default'}"
+    if monitor.monitor_filter:
+        filter = monitor.monitor_filter
     partial_result = 'OK<br>'
     r = call('SetTpCdrStats', {
         'Tenant': tenant,
@@ -174,7 +175,7 @@ def monitor_to_tp(monitor, db):
         'TimeWindow': monitor.time_window,
         'SaveInterval': '30s',
         'Metrics': monitor.metrics,
-        'Filter': monitor.monitor_filter,
+        'Filter': filter,
         'ActionTriggerTags': [trigger_name],
         'Disabled': monitor.status == 'disabled',
     })

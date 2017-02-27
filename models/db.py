@@ -190,7 +190,7 @@ import accurate
 db.define_table(
     'reseller',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'reseller.name')]),
-    Field('unique_code', compute=lambda r: "rs_"+str(uuid4())[:6]),
+    Field('unique_code', 'string', required=True, readable=False, writable=False),
     Field('currency', 'string', default='USD'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
     Field('gateways', 'list:string'),
@@ -204,7 +204,7 @@ db.define_table(
 db.define_table(
     'client',
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'client.name')]),
-    Field('unique_code', compute=lambda r: "cl_"+str(uuid4())[:6]),
+    Field('unique_code', 'string', required=True, readable=False, writable=False),
     Field('reseller', 'reference reseller', readable=False, writable=False),
     Field('currency', 'string', default='USD'),
     Field('time_zone', 'string', default='Local'),
@@ -224,7 +224,7 @@ db.define_table(
     'rate_sheet',
     Field('client', 'reference client', comment=T('select the client'), readable=False, writable=False),
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'rate_sheet.name')]),
-    Field('unique_code', compute=lambda r: "rs_"+str(uuid4())[:6]),
+    Field('unique_code', 'string', required=True, readable=False, writable=False),
     Field('effective_date', 'datetime', default=request.now),
     Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
@@ -248,7 +248,7 @@ db.define_table(
     'monitor',
     Field('client', 'reference client', required=True, readable=False, writable=False),
     Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'monitor.name')]),
-    Field('unique_code', compute=lambda r: "mt_"+str(uuid4())[:6]),
+    Field('unique_code', 'string', required=True, readable=False, writable=False),
     Field('queue_length', 'integer', required=True),
     Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
     Field('metrics', 'list:string', requires=IS_IN_SET(('ASR', 'ACD', 'TCD', 'ACC', 'TCC', 'PDD', 'DDC'), multiple=True)),
@@ -276,6 +276,17 @@ db.define_table(
     format='%(statement_no)s'
 )
 
+# unique_code hooks
+
+def add_unique_code(fields, prefix):
+    fields['unique_code'] = prefix + str(uuid4())[:6]
+
+db.reseller._before_insert.append(lambda f: add_unique_code(f, "rs_"))
+db.client._before_insert.append(lambda f: add_unique_code(f, "cl_"))
+db.rate_sheet._before_insert.append(lambda f: add_unique_code(f, "rs_"))
+db.monitor._before_insert.append(lambda f: add_unique_code(f, "mt_"))
+
+# tp hooks
 def disable_account(s):
     client = s.select().first()
     accurate.account_disable(client)

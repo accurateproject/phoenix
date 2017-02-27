@@ -11,3 +11,4 @@ errors
 *.sublime*
 progress.log
 /.pythonhistory
+.tern-port

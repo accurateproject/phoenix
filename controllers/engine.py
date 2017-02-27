@@ -29,6 +29,17 @@ def metrics():
     return metrics
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def account():
+    session.forget(response)
+    client = db.client(request.args(0))
+    if not accessible_client(client.id):
+        redirect(URL('user', 'not_autorized'))
+    r = accurate.call("ApiV1.GetAccount", dict(Tenant = client.unique_code, Account = client.unique_code))
+    account = r['error'] if r['error'] else r['result']
+
+    return account
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def cdrs():
     client_id = request.args(0)
     if not accessible_client(client_id):
