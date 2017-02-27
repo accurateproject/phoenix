@@ -16,6 +16,7 @@
   {{=form.custom.label.nb_prefix}}: <div>{{=form.custom.widget.nb_prefix}}</div>
   {{=form.custom.label.status}}: <div>{{=form.custom.widget.status}}</div>
   {{=form.custom.label.address}}: <div>{{=form.custom.widget.address}}</div>
+  {{=form.custom.label.email}}: <div>{{=form.custom.widget.email}}</div>
   {{=T('Invoice system')}}: <div>{{=form.custom.widget.invoice_period}} net {{=form.custom.widget.payment_period}}</div>
   {{=form.custom.label.tax_id}}: <div>{{=form.custom.widget.tax_id}}</div>
   {{=form.custom.label.reg_id}}: <div>{{=form.custom.widget.reg_id}}</div>
@@ -33,7 +34,6 @@
   <thead>
     <tr>
       <th>{{=T('Name')}}</th>
-      <th>{{=T('Unique code')}}</th>
       <th>{{=T('Reseller')}}</th>
       <th>{{=T('Currency')}}</th>
       <th>{{=T('Time Zone')}}</th>
@@ -45,6 +45,7 @@
       <th>{{=T('Tax ID')}}</th>
       <th>{{=T('Reg ID')}}</th>
       <th>{{=T('Address')}}</th>
+      <th>{{=T('Email')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
@@ -52,7 +53,6 @@
     {{for client in clients:}}
     <tr>
       <td>{{=client.name}}</td>
-      <td>{{=client.unique_code}}</td>
       <td>{{=client.reseller.name}}</td>
       <td>{{=client.currency}}</td>
       <td>{{=client.time_zone}}</td>
@@ -64,6 +64,7 @@
       <td>{{=client.tax_id}}</td>
       <td>{{=client.reg_id}}</td>
       <td>{{=client.address}}</td>
+      <td>{{=client.email}}</td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL(args=client.reseller.id, vars={'edit': client.id, 'reseller_id': client.reseller.id}), _class="btn btn-link")}}

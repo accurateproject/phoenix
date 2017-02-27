@@ -18,17 +18,15 @@ def resellers():
 
 @auth.requires(auth.has_membership('admin') or auth.has_membership('reseller'))
 def clients():
-    show_form = True
     reseller_id = request.args(0) or redirect('index')
     if not accessible_reseller(reseller_id):
         redirect(URL('user', 'not_autorized'))
     db.client.reseller.default = reseller_id
     db.client.nb_prefix.requires=IS_NOT_IN_DB(db(db.client.reseller==reseller_id), 'client.nb_prefix', error_message=T('reseller has already a client with this prefix'))
     onaccept = give_client_owner_permissions if auth.has_membership('reseller') else None
-    form = crud.update(db.client, request.vars['edit'], next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
-
+    form = crud.update(db.client, request.vars['edit'])#, next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
     clients = db(db.client.reseller == reseller_id).select()
-    return dict(form=form, show_form=show_form, clients=clients)
+    return dict(form=form, show_form=True, clients=clients)
 
 @auth.requires(auth.has_membership('client'))
 def my_clients():

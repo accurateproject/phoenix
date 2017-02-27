@@ -279,6 +279,7 @@ db.define_table(
 # unique_code hooks
 
 def add_unique_code(fields, prefix):
+    print "before insert: ", fields, prefix
     fields['unique_code'] = prefix + str(uuid4())[:6]
 
 db.reseller._before_insert.append(lambda f: add_unique_code(f, "rs_"))
