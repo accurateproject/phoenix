@@ -33,7 +33,7 @@ def rate_sheet_to_tp(rs, rs_rates):
     tenant = rs.client.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
-    rs_id = '_%s_%s_' % (rs.unique_code, rs.direction)
+    rs_id = '_out' if rs.direction == 'outbound' else '_in'
     for rate in rs_rates:
         rate.code_name = upper_under(rate.code_name)
         destinations.append({'Tenant':tenant, 'Code':rate.code, 'Tag':rate.code_name})
