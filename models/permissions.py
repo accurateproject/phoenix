@@ -12,8 +12,9 @@ def initialize_permissions():
 
 
     # make the first user admin
-    first_user = myrecord = db(db.auth_user).select().first()
+    first_user = db(db.auth_user).select().first()
     if first_user != None:
+        first_user.update_record(registration_key='')
         auth.add_membership(admin_group_id, first_user.id)
 
     auth.add_permission(admin_group_id, 'create', db.reseller)

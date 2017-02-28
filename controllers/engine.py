@@ -25,19 +25,17 @@ def metrics():
     for mon in monitors:
         r = accurate.call("CDRStatsV1.GetMetrics", dict(Tenant = client.unique_code, ID = mon.unique_code))
         metrics[mon.unique_code] = r['error'] if r['error'] else r['result']
-
     return metrics
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def account():
+def accounts():
     session.forget(response)
     client = db.client(request.args(0))
     if not accessible_client(client.id):
         redirect(URL('user', 'not_autorized'))
-    r = accurate.call("ApiV1.GetAccount", dict(Tenant = client.unique_code, Account = client.unique_code))
-    account = r['error'] if r['error'] else r['result']
-
-    return account
+    r = accurate.call("ApiV1.GetAccounts", dict(Tenant = client.unique_code, IDs = [client.unique_code+'_out', client.unique_code+'_in']))
+    x = r['error'] if r['error'] else r['result']
+    return XML(response.json(x))
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def cdrs():
@@ -126,9 +124,9 @@ def cdrs():
 
     params['offset'], params['limit'] = page*items_per_page, items_per_page+1
 
-    params['run_ids'] = ['*default']
+    params['runids'] = ['*default']
     params['tenants'] = [client.unique_code]
-    params['accounts'] = [client.unique_code]
+    params['accounts'] = [client.unique_code+"_out", client.unique_code+"_in"]
     params['subjects'] = [client.unique_code]
 
     cdrs = []
@@ -140,7 +138,7 @@ def cdrs():
         cdrs = r['result']
 
     # prepare the params for show
-    if 'run_ids' in params: del params['run_ids']
+    if 'runids' in params: del params['runids']
     if 'tenants' in params: del params['tenants']
     if 'subjects' in params: del params['subjects']
     if 'accounts' in params: del params['accounts']

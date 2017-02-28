@@ -52,7 +52,7 @@
 
 <h2>{{=T('Statistics')}}</h2>
 
-<h3>{{=T('Account:')}} <span id="account"></span></h3>
+<h3>{{=T('Account')}} <span id="account_out_wrapper">{{=T(' out:')}}<span id="account_out"></span></span> <span id="account_in_wrapper">{{=T(' in:')}}<span id="account_in"></span></span></h3>
 
 {{for monitor in monitors:}}
 <h3>{{=monitor.name}}</h3>
@@ -92,11 +92,22 @@
        }
      });
      $.ajax({
-       url: "http://localhost:8000/engine/account.json/{{=client.id}}",
+       url: "http://localhost:8000/engine/accounts.json/{{=client.id}}",
        type: "GET",
        dataType: "json",
-       success: function(account) {
-	 $('#account').text(account.BalanceMap['*monetary'][0].Value);
+       success: function(accounts) {
+	 if((accounts[0].Name.substr(-3) === '_in') && (Object.keys(accounts[0].BalanceMap).length !== 0)){
+	   $('#account_in_wrapper').show();
+	   $('#account_in').text(accounts[0].BalanceMap['*monetary'][0].Value);
+	 }else{
+	   $('#account_in_wrapper').hide();
+	 }
+	 if((accounts[1].Name.substr(-4) === '_out') && (Object.keys(accounts[1].BalanceMap).length !== 0)){
+	   $('#account_out_wrapper').show();
+	   $('#account_out').text(accounts[1].BalanceMap['*monetary'][0].Value);
+	 }else{
+	   $('#account_out_wrapper').hide();
+	 }
        }
      });
      return ;

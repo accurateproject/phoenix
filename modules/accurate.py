@@ -33,6 +33,7 @@ def rate_sheet_to_tp(rs, rs_rates):
     tenant = rs.client.unique_code
     client_name = rs.client.unique_code
     rs_name = upper_under(rs.name)
+    rs_id = '_%s_%s_' % (rs.unique_code, rs.direction)
     for rate in rs_rates:
         rate.code_name = upper_under(rate.code_name)
         destinations.append({'Tenant':tenant, 'Code':rate.code, 'Tag':rate.code_name})
@@ -54,18 +55,19 @@ def rate_sheet_to_tp(rs, rs_rates):
     bindings=[]
     for dest in destinations:
         bindings.append({'DestinationCode':dest['Code'], 'RatesTag':'R'+dest['Code'], 'RoundingMethod':'*middle', 'RoundingDecimals':6})
-    r = call('SetTpDestinationRate', {'Tenant':tenant, 'Tag':'DR_STANDARD', 'Bindings':bindings})
+    r = call('SetTpDestinationRate', {'Tenant':tenant, 'Tag':'DR_STANDARD'+rs_id, 'Bindings':bindings})
     results['DestinationRates'].append(r)
 
     results['RatingPlans'] = []
-    r = call('SetTpRatingPlan', {'Tenant':tenant, 'Tag':'RP_STANDARD', 'Bindings':
-                                 [{'DestinationRatesTag':'DR_STANDARD', 'TimingTag':'*any', 'Weight':10}]})
+    r = call('SetTpRatingPlan', {'Tenant':tenant, 'Tag':'RP_STANDARD'+rs_id, 'Bindings':
+                                 [{'DestinationRatesTag':'DR_STANDARD'+rs_id, 'TimingTag':'*any', 'Weight':10}]})
     results['RatingPlans'].append(r)
 
     results['RatingProfiles'] = []
     direction = '*out' #if rs.direction == 'outbound' else '*in'
-    r = call('SetTpRatingProfile', {'Tenant':tenant, 'Direction':direction, 'Category':'call', 'Subject':client_name, 'Activations':
-                                    [{'ActivationTime':'2012-01-01T00:00:00Z', "RatingPlanTag":"RP_STANDARD"}]})
+    category = 'call_out' if rs.direction == 'outbound' else 'call_in'
+    r = call('SetTpRatingProfile', {'Tenant':tenant, 'Direction':direction, 'Category':category, 'Subject':client_name, 'Activations':
+                                    [{'ActivationTime':'2012-01-01T00:00:00Z', "RatingPlanTag":"RP_STANDARD"+rs_id}]})
     results['RatingProfiles'].append(r)
 
     response = ''
@@ -89,8 +91,28 @@ def rate_sheet_to_tp(rs, rs_rates):
 def account_update(client):
     tenant = client.unique_code #rs.client.reseller.unique_code
     client_name = client.unique_code
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "AllowNegative":True, "Disabled":client.status == 'disabled'})
-    result = 'Account activation<br>'
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_out", "AllowNegative":True, "Disabled":client.status == 'disabled'})
+    result = 'Account outbound activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_in", "AllowNegative":True, "Disabled":client.status == 'disabled'})
+    result = 'Account inbound activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+
+
+    query = '{'
+    if client.nb_prefix:
+        query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']}," % dict(prefix=client.nb_prefix)
+    query += ''' 'sip_from_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s_out'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Category':{'$usr':'call_out'}, 'Subject':{'$usr':'%(client)s'}'''\
+             % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
+    query += '}'
+    r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name+"_out", "Weight":20, "Query":query})
+    result += 'User outbound activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
@@ -98,16 +120,16 @@ def account_update(client):
     query = '{'
     if client.nb_prefix:
         query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']}," % dict(prefix=client.nb_prefix)
-    query += ''' 'sip_from_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Subject':{'$usr':'%(client)s'}, 'direction':{'$usr': 'outbound'}'''\
+    query += ''' 'sip_to_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s_in'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Category':{'$usr':'call_in'}, 'Subject':{'$usr':'%(client)s'}'''\
              % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
     query += '}'
-
-    r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name, "Weight":10, "Query":query})
-    result += 'User activation<br>'
+    r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name+"_in", "Weight":10, "Query":query})
+    result += 'User inbound activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
+
     r = call('UsersV1.ReloadUsers', {"Tenant":tenant})
     result += 'User reload<br>'
     if r['result'] != 'OK':
@@ -120,7 +142,13 @@ def account_disable(client):
     tenant = client.unique_code #rs.client.reseller.unique_code
     client_name = client.unique_code
 
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name, "Disabled":True})
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_out", "Disabled":True})
+    result = 'Account activation<br>'
+    if r['result'] != 'OK':
+        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    else:
+        result += 'OK<br>'
+    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_in", "Disabled":True})
     result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
