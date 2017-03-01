@@ -44,7 +44,6 @@ def cdrs():
         redirect(URL('user', 'not_autorized'))
     client = db.client[client_id] or redirect(URL('user', 'not_autorized'))
 
-
     field_dict = OrderedDict()
     field_dict['cgr_ids'] = 'list:string'
     field_dict['not_cgr_ids'] = 'list:string'

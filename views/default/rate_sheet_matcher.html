@@ -1,0 +1,28 @@
+{{extend 'layout.html'}}
+
+<h1>{{=T('Match columns to values')}}</h1>
+<ul>
+  <li>{{=T('Code - mandatory')}}</li>
+  <li>{{=T('Name - mandatory')}}</li>
+  <li>{{=T('Rate - mandatory')}}</li>
+  <li>{{=T('Effective date - optional, default: today')}}</li>
+  <li>{{=T('Code - optional, default: 1 (second)')}}</li>
+</ul>
+<table>
+    {{for index,element in enumerate(line):}}
+    <tr>
+      <td>{{=element.strip('"')}}</td>
+      <td><select name="{{=index}}" form="match_form">
+	<option value="code" {{='selected' if index == 0 else ''}}>{{=T('Code')}}</option>
+	<option value="name" {{='selected' if index == 1 else ''}}>{{=T('Name')}}</option>
+	<option value="rate" {{='selected' if index == 2 else ''}}>{{=T('Rate')}}</option>
+	<option value="effective_date" {{='selected' if index == 3 else ''}}>{{=T('Effective date')}}</option>
+	<option value="increment" {{='selected' if index == 4 else ''}}>{{=T('Min increment')}}</option>
+      </select></td>
+    </tr>
+    {{pass}}
+</table>
+<form action="{{=URL('default', 'rate_sheet_parse')}}" id="match_form">
+  <input type="hidden" name="rate_sheet_id" value="{{=rate_sheet_id}}">
+  <input type="submit" value="{{=T('Submit mapping')}}">
+</form>

@@ -55,8 +55,6 @@ def rate_sheets():
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheet_import():
-    import csv
-    from dateutil.parser import parse
     rate_sheet_id = request.args(0) or redirect('index')
     rate_sheet = db.rate_sheet[rate_sheet_id]
     __check_rate_sheet(rate_sheet)
@@ -64,18 +62,60 @@ def rate_sheet_import():
     db.rate.sheet.default = rate_sheet_id
     form = FORM(INPUT(_type='file', _name='data'), INPUT(_type='submit'))
     if form.process().accepted:
-        rate_sheet_reader = csv.reader(form.vars.data.file, delimiter=',', quotechar='"')
-        for row in rate_sheet_reader:
-            if row[0] == 'Code': # header
-                continue
-            db.rate.update_or_insert((db.rate.code == row[0]) & (db.rate.sheet == rate_sheet_id),
-                                     code = row[0],
-                                     code_name = row[1],
-                                     rate = float(row[2]),
-                                     effective_date = parse(row[3]), #01/15/2015 00:00:00 +0000
-                                     min_increment = int(row[4]))
-        redirect(URL('default', 'rates', args=rate_sheet_id))
+        lines = []
+        for line in form.vars.data.file:
+            lines.append(line)
+        rate_sheet.update_record(tmp_import = '\n'.join(lines))
+        redirect(URL('default', 'rate_sheet_matcher', vars=dict(line=lines[0], rate_sheet_id=rate_sheet_id)))
     return dict(form=form)
+
+def rate_sheet_matcher():
+    line = request.vars.line.strip()
+    rate_sheet_id = request.vars.rate_sheet_id
+    line = line.split(',')
+    return dict(line=line, rate_sheet_id=rate_sheet_id)
+
+@auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
+def rate_sheet_parse():
+    import csv
+    from dateutil.parser import parse
+    from StringIO import StringIO
+
+    rate_sheet_id = request.vars.rate_sheet_id
+    rate_sheet = db.rate_sheet[rate_sheet_id] or redirect('index')
+    data = StringIO(rate_sheet.tmp_import)
+    rate_sheet.update_record(tmp_import = '')
+    rate_sheet_reader = csv.reader(data, delimiter=',', quotechar='"')
+    code_id, name_id, rate_id, effective_date_id, increment_id = -1, -1, -1, -1, -1
+    def conv_int(s):
+        try:
+            x = int(s)
+            return x
+        except ValueError:
+            return -1
+    for key, value in request.vars.iteritems():
+        if value == 'code': code_id = conv_int(key)
+        if value == 'name': name_id = conv_int(key)
+        if value == 'rate': rate_id = conv_int(key)
+        if value == 'effective_date': effective_date_id = conv_int(key)
+        if value == 'increment': increment_id = conv_int(key)
+
+    for row in rate_sheet_reader:
+        if len(row) == 0: continue
+        code = row[code_id] if code_id != -1 else 'undefined'
+        name = row[name_id] if name_id != -1 else 'undefined'
+        rate = float(row[rate_id]) if rate_id != -1 else -1
+        effective_date = parse(row[effective_date_id]) if effective_date_id != -1 else request.now #01/15/2015 00:00:00 +0000
+        increment = conv_int(row[increment_id]) if increment_id != -1 else 1
+        db.rate.update_or_insert((db.rate.code == code) & (db.rate.sheet == rate_sheet_id),
+                                 sheet = rate_sheet_id,
+                                 code = code,
+                                 code_name = name,
+                                 rate = float(rate),
+                                 effective_date = effective_date,
+                                 min_increment = increment)
+    redirect(URL('default', 'rates', args=rate_sheet_id))
+
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rates():

@@ -223,11 +223,12 @@ db.define_table(
 db.define_table(
     'rate_sheet',
     Field('client', 'reference client', comment=T('select the client'), readable=False, writable=False),
-    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'rate_sheet.name')]),
+    Field('name', 'string', unique=True, required=True, requires=IS_NOT_EMPTY()),
     Field('unique_code', 'string', required=True, readable=False, writable=False),
     Field('effective_date', 'datetime', default=request.now),
     Field('direction', requires=IS_IN_SET(('outbound', 'inbound')), default='outbound'),
     Field('status', 'string', requires=IS_IN_SET(('enabled', 'disabled')), default='enabled'),
+    Field('tmp_import', 'text', readable=False, writable=False),
     format='%(name)s'
 )
 
@@ -247,7 +248,7 @@ db.define_table(
 db.define_table(
     'monitor',
     Field('client', 'reference client', required=True, readable=False, writable=False),
-    Field('name', 'string', unique=True, required=True, requires=[IS_NOT_EMPTY(), IS_NOT_IN_DB(db, 'monitor.name')]),
+    Field('name', 'string', unique=True, required=True, requires=IS_NOT_EMPTY()),
     Field('unique_code', 'string', required=True, readable=False, writable=False),
     Field('queue_length', 'integer', required=True),
     Field('time_window', 'string', comment=T('cdr time window (s/m/h)')),
