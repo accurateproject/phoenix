@@ -290,6 +290,7 @@ db.monitor._before_insert.append(lambda f: add_unique_code(f, "mt_"))
 # tp hooks
 def disable_account(s):
     client = s.select().first()
+    if client is None: return
     accurate.account_disable(client)
     # disable all monitor
     monitors = db(db.monitor.client == client.id).select()
