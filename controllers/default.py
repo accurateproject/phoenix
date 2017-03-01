@@ -11,7 +11,7 @@ def index():
 
 @auth.requires_membership('admin')
 def resellers():
-    form = crud.update(db.reseller, request.args(0), onaccept=give_reseller_owner_permissions)
+    form = crud.update(db.reseller, request.args(0), onaccept=give_reseller_owner_permissions, next=URL('default', 'resellers'))
     query = auth.accessible_query('read', db.reseller, auth.user_id)
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
@@ -24,11 +24,11 @@ def clients():
     db.client.reseller.default = reseller_id
     db.client.nb_prefix.requires=IS_NOT_IN_DB(db(db.client.reseller==reseller_id), 'client.nb_prefix', error_message=T('reseller has already a client with this prefix'))
     onaccept = give_client_owner_permissions if auth.has_membership('reseller') else None
-    form = crud.update(db.client, request.vars['edit'])#, next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
+    form = crud.update(db.client, request.vars['edit'], next=URL('default', 'clients', args=reseller_id), onaccept=onaccept)
     clients = db(db.client.reseller == reseller_id).select()
     return dict(form=form, show_form=True, clients=clients)
 
-@auth.requires(auth.has_membership('client'))
+@auth.requires(auth.has_membership('reseller') or auth.has_membership('client'))
 def my_clients():
     show_form = False
     client_id = request.vars['edit']
@@ -83,7 +83,7 @@ def rates():
     rate_sheet = db.rate_sheet[rate_sheet_id]
     __check_rate_sheet(rate_sheet)
     db.rate.sheet.default = rate_sheet_id
-    form = crud.update(db.rate, request.args(1))
+    form = crud.update(db.rate, request.args(1), next=URL('default', 'rates', args=rate_sheet_id))
     rates = db(db.rate.sheet == rate_sheet_id).select()
     return dict(form=form, rate_sheet=rate_sheet, rates=rates)
 

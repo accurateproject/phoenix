@@ -1,5 +1,11 @@
 {{extend 'layout.html'}}
 
+<div style="float:right">
+  {{if auth.has_membership('admin'):}}
+  {{=A(T('back to resellers'), _href=URL('default', 'resellers'), _class="btn btn-default")}}
+  {{pass}}
+</div>
+
 <h1>{{=T('Clients')}}</h1>
 
 {{if show_form:}}

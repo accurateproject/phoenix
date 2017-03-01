@@ -5,7 +5,7 @@
 <div id="import_rates_btn" class="btn-group"  role="group" aria-label="actions">
   {{=A(T('import rate sheet'), _href=URL('default', 'rate_sheet_import', args=rate_sheet.id), _class="btn btn-default")}}
   {{=A(T('activate'), _href=URL('engine', 'activate_rate_sheet', args=rate_sheet.id), _class="btn btn-danger")}}
-  {{=A(T('back to rate sheets'), _href=URL('default', 'rate_sheets'), _class="btn btn-default")}}
+  {{=A(T('back to rate sheets'), _href=URL('default', 'rate_sheets', args=rate_sheet.client.id), _class="btn btn-default")}}
 </div>
 
 <dl class="dl-horizontal">

@@ -28,17 +28,19 @@ response.google_analytics_id = None
 # this is the main application menu add/remove items as required
 # ----------------------------------------------------------------------------------------------------------------------
 
-menu_items = [(T('Home'), False, URL('default', 'index'))]
+menu_items = []
+
+
+response.menu = [
+    #(T('Management'), True, '#', menu_items)
+    (T('Home'), False, URL('default', 'index'))
+]
 
 if auth.has_membership('admin'):
-    menu_items.extend([
+    response.menu.extend([
         (T('Manage Users'), False, URL('roles', 'manage_users')),
     ])
 
-response.menu = [
-    (T('Management'), True, '#', menu_items)
-
-]
 
 if "auth" in locals():
     auth.wikimenu()
