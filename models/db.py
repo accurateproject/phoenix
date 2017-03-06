@@ -279,57 +279,72 @@ db.define_table(
 
 # unique_code hooks
 
+
 def add_unique_code(fields, prefix):
     fields['unique_code'] = prefix + str(uuid4())[:6]
+
 
 db.reseller._before_insert.append(lambda f: add_unique_code(f, "rs_"))
 db.client._before_insert.append(lambda f: add_unique_code(f, "cl_"))
 db.rate_sheet._before_insert.append(lambda f: add_unique_code(f, "rs_"))
 db.monitor._before_insert.append(lambda f: add_unique_code(f, "mt_"))
 
+
 # tp hooks
-def disable_account(s):
-    client = s.select().first()
-    if client is None: return
-    accurate.account_disable(client)
-    # disable all monitor
-    monitors = db(db.monitor.client == client.id).select()
-    for monitor in monitors:
-        monitor.status = 'disabled'
-        accurate.monitor_to_tp(stat, db)
+def remove_client(s):
+    for client in s.select():
+        print 'remove client:', client
+        accurate.account_remove(client)
+        # delete all permissions to that client
+        db((db.auth_permission.table_name == 'client') &
+           (db.auth_permission.record_id == client.id)).delete()
 
-db.client._after_insert.append(lambda f, id: accurate.account_update(db.client[id]))
-db.client._after_update.append(lambda s, f: accurate.account_update(s.select().first()))
-db.client._before_delete.append(disable_account)
-
-def update_monitors(s,f):
-    accurate.monitor_to_tp(s.select().first(), db)
-
-
-def disable_monitor(s):
-    monitor = s.select().first()
-    monitor.status = 'disabled'
-    accurate.monitor_to_tp(monitor, db)
-
-db.monitor._after_insert.append(lambda f, id: accurate.monitor_to_tp(db.monitor[id], db))
-db.monitor._after_update.append(update_monitors)
-db.monitor._before_delete.append(disable_monitor)
 
 def update_clients(s, f):
-    reseller = s.select().first()
-    clients = db(db.client.reseller==reseller.id).select()
-    for client in clients:
-        if reseller.status=='enabled':
+    for reseller in s.select():
+        clients = db(db.client.reseller == reseller.id).select()
+        for client in clients:
+            client.status = 'disabled'
             accurate.account_update(client)
-        else:
-            accurate.account_disable(client)
+
+db.client._after_insert.append(lambda f, id:
+                               accurate.account_update(db.client[id]))
+db.client._after_update.append(lambda s, f:
+                               accurate.account_update(s.select().first()))
+db.client._before_delete.append(remove_client)
 
 
-def disable_clients(s):
-    reseller = s.select().first()
-    clients = db(db.client.reseller==reseller.id).select()
-    for client in clients:
-        accurate.account_disable(client)
+def update_monitors(s, f):
+    for monitor in s.select():
+        accurate.monitor_to_tp(monitor)
+
+
+def remove_monitor(s):
+    for monitor in s.select():
+        accurate.monitor_remove(monitor)
+
+
+db.monitor._after_insert.append(lambda f, id:
+                                accurate.monitor_to_tp(db.monitor[id]))
+db.monitor._after_update.append(update_monitors)
+db.monitor._before_delete.append(remove_monitor)
+
+
+def update_clients(s, f):
+    for reseller in s.select():
+        clients = db(db.client.reseller == reseller.id).select()
+        for client in clients:
+            client.status = 'disabled'
+            accurate.account_update(client)
+
+
+def remove_reseller(s):
+    for reseller in s.select():
+        print 'reseller: ', reseller
+        db((db.auth_permission.table_name == 'reseller') &
+           (db.auth_permission.record_id == reseller.id)).delete()
+        remove_client(db(db.client.reseller == reseller.id))
+
 
 db.reseller._after_update.append(update_clients)
-db.reseller._before_delete.append(disable_clients)
+db.reseller._before_delete.append(remove_reseller)

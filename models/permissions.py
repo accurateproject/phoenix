@@ -121,6 +121,7 @@ def get_user_resellers(user_id=None):
         users_resellers[uid] = [r.id for r in resellers]
     return users_resellers
 
+
 def get_user_clients(user_id=None):
     users_clients = {}
     user_ids = [user_id]

@@ -89,7 +89,7 @@ def rate_sheet_to_tp(rs, rs_rates):
     return response
 
 def account_update(client):
-    tenant = client.unique_code #rs.client.reseller.unique_code
+    tenant = client.unique_code  # rs.client.reseller.unique_code
     client_name = client.unique_code
     r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_out", "AllowNegative":True, "Disabled":client.status == 'disabled'})
     result = 'Account outbound activation<br>'
@@ -104,6 +104,8 @@ def account_update(client):
     else:
         result += 'OK<br>'
 
+    if client.status == 'disabled':
+        return result
 
     query = '{'
     if client.nb_prefix:
@@ -138,25 +140,21 @@ def account_update(client):
         result += 'OK<br>'
     return result
 
-def account_disable(client):
-    tenant = client.unique_code #rs.client.reseller.unique_code
+
+def account_remove(client):
+    tenant = client.unique_code  # rs.client.reseller.unique_code
     client_name = client.unique_code
 
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_out", "Disabled":True})
-    result = 'Account activation<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_in", "Disabled":True})
-    result = 'Account activation<br>'
+    r = call('RemoveTpAllTenant', {'Tenant':tenant})
+    result = 'Account removal<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
     return result
 
-def monitor_to_tp(monitor, db):
+
+def monitor_to_tp(monitor):
     tenant = monitor.client.unique_code
 
     monitor_name = monitor.unique_code
@@ -211,7 +209,14 @@ def monitor_to_tp(monitor, db):
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
-    result += 'Stats realod<br>'
+    result += monitor_reload(monitor)
+    return result
+
+def monitor_reload(monitor):
+    tenant = monitor.client.unique_code
+    monitor_name = monitor.unique_code
+
+    result = 'Stats realod<br>'
     partial_result = 'OK<br>'
     # reload
     r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
@@ -224,6 +229,33 @@ def monitor_to_tp(monitor, db):
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
 
     result += partial_result
+    return result
 
 
+def monitor_remove(monitor):
+    tenant = monitor.client.unique_code
+
+    monitor_name = monitor.unique_code
+    action_name = "act_"+monitor_name
+    trigger_name = "tr_"+monitor_name
+
+    # remove cdrstats
+    r = call('CDRStatsV1.RemoveQueue', {'Tenant':tenant, 'IDs':[monitor_name]})
+    result = 'Monitor removal<br>'
+    partial_result = 'OK<br>'
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    result += partial_result
+    # remove action trigger
+    r = call('RemoveActionTriggers', {'Tenant':tenant, 'GroupIDs':[trigger_name]})
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    result += partial_result
+    # remove action
+    r = call('RemoveActionGroups', {'Tenant':tenant, 'GroupIDs':[action_name]})
+    if r['result'] != 'OK':
+        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    result += partial_result
+
+    result += monitor_reload(monitor)
     return result

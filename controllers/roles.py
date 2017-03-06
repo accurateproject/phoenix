@@ -56,10 +56,16 @@ def _user_resellers():
             auth.add_permission(group_id, 'read', db.client, existing_client.id)
             auth.add_permission(group_id, 'update', db.client, existing_client.id)
             auth.add_permission(group_id, 'delete', db.client, existing_client.id)
+        # add rights on new resellers
+        auth.add_permission(group_id, 'read', db.reseller, reseller_id)
+        auth.add_permission(group_id, 'update', db.reseller, reseller_id)
+        auth.add_permission(group_id, 'delete', db.reseller, reseller_id)
     if new_reseller_list:
         auth.add_membership('reseller', user_id)
+        auth.add_membership('client', user_id)
     else:
          auth.del_membership('reseller', user_id)
+         auth.del_membership('client', user_id)
     return 'ok'
 
 @auth.requires_membership('admin')

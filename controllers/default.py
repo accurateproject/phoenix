@@ -42,6 +42,7 @@ def my_clients():
     response.view = 'default/clients.html'
     return dict(form=form, show_form=show_form, clients=clients)
 
+
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():
     client_id=request.args(0) or redirect('index')
