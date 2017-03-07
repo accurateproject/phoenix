@@ -44,7 +44,6 @@
       <th>{{=T('Currency')}}</th>
       <th>{{=T('Time Zone')}}</th>
       <th>{{=T('Prefix')}}</th>
-      <th>{{=T('Status')}}</th>
       <th>{{=T('Invoice period')}}</th>
       <th>{{=T('Payment period')}}</th>
       <th>{{=T('Active rate sheet')}}</th>
@@ -52,6 +51,7 @@
       <th>{{=T('Reg ID')}}</th>
       <th>{{=T('Address')}}</th>
       <th>{{=T('Email')}}</th>
+      <th>{{=T('Status')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
@@ -63,7 +63,6 @@
       <td>{{=client.currency}}</td>
       <td>{{=client.time_zone}}</td>
       <td>{{=client.nb_prefix}}</td>
-      <td>{{=client.status}}</td>
       <td>{{=client.invoice_period}}</td>
       <td>{{=client.payment_period}}</td>
       <td>{{=client.active_rate_sheet.name if client.active_rate_sheet else T('not set')}}</td>
@@ -71,6 +70,7 @@
       <td>{{=client.reg_id}}</td>
       <td>{{=client.address}}</td>
       <td>{{=client.email}}</td>
+      <td><span class="label label-{{='success' if client.status =='enabled' else 'danger'}}">{{=client.status}}</span></td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL(args=client.reseller.id, vars={'edit': client.id, 'reseller_id': client.reseller.id}), _class="btn btn-link")}}

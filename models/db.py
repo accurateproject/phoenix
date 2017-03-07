@@ -291,60 +291,59 @@ db.monitor._before_insert.append(lambda f: add_unique_code(f, "mt_"))
 
 
 # tp hooks
-def remove_client(s):
+def update_resellers(s, f):
+    for reseller in s.select():
+        clients = db(db.client.reseller == reseller.id).select()
+        for client in clients:
+            client.update_record(status = reseller.status)
+            accurate.account_update(client)
+
+
+def remove_resellers(s):
+    for reseller in s.select():
+        db((db.auth_permission.table_name == 'reseller') &
+           (db.auth_permission.record_id == reseller.id)).delete()
+        remove_clients(db(db.client.reseller == reseller.id))
+
+
+db.reseller._after_update.append(update_resellers)
+db.reseller._before_delete.append(remove_resellers)
+
+
+def update_clients(s, f):
     for client in s.select():
-        print 'remove client:', client
+        accurate.account_update(client)
+        monitors = db(db.monitor.client == client.id).select()
+        for monitor in monitors:
+            monitor.update_record(status = client.status)
+            accurate.monitor_update(monitor)
+
+
+def remove_clients(s):
+    for client in s.select():
         accurate.account_remove(client)
         # delete all permissions to that client
         db((db.auth_permission.table_name == 'client') &
            (db.auth_permission.record_id == client.id)).delete()
 
 
-def update_clients(s, f):
-    for reseller in s.select():
-        clients = db(db.client.reseller == reseller.id).select()
-        for client in clients:
-            client.status = 'disabled'
-            accurate.account_update(client)
-
 db.client._after_insert.append(lambda f, id:
                                accurate.account_update(db.client[id]))
-db.client._after_update.append(lambda s, f:
-                               accurate.account_update(s.select().first()))
-db.client._before_delete.append(remove_client)
+db.client._after_update.append(update_clients)
+db.client._before_delete.append(remove_clients)
 
 
 def update_monitors(s, f):
     for monitor in s.select():
-        accurate.monitor_to_tp(monitor)
+        accurate.monitor_update(monitor)
 
 
-def remove_monitor(s):
+def remove_monitors(s):
     for monitor in s.select():
         accurate.monitor_remove(monitor)
 
 
 db.monitor._after_insert.append(lambda f, id:
-                                accurate.monitor_to_tp(db.monitor[id]))
+                                accurate.monitor_update(db.monitor[id]))
 db.monitor._after_update.append(update_monitors)
-db.monitor._before_delete.append(remove_monitor)
-
-
-def update_clients(s, f):
-    for reseller in s.select():
-        clients = db(db.client.reseller == reseller.id).select()
-        for client in clients:
-            client.status = 'disabled'
-            accurate.account_update(client)
-
-
-def remove_reseller(s):
-    for reseller in s.select():
-        print 'reseller: ', reseller
-        db((db.auth_permission.table_name == 'reseller') &
-           (db.auth_permission.record_id == reseller.id)).delete()
-        remove_client(db(db.client.reseller == reseller.id))
-
-
-db.reseller._after_update.append(update_clients)
-db.reseller._before_delete.append(remove_reseller)
+db.monitor._before_delete.append(remove_monitors)

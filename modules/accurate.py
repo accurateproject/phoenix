@@ -154,7 +154,7 @@ def account_remove(client):
     return result
 
 
-def monitor_to_tp(monitor):
+def monitor_update(monitor):
     tenant = monitor.client.unique_code
 
     monitor_name = monitor.unique_code
@@ -212,7 +212,7 @@ def monitor_to_tp(monitor):
     result += monitor_reload(monitor)
     return result
 
-def monitor_reload(monitor):
+def monitor_reload(monitor, reset=True):
     tenant = monitor.client.unique_code
     monitor_name = monitor.unique_code
 
@@ -222,7 +222,10 @@ def monitor_reload(monitor):
     r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
     if r['result'] != 'OK':
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
+    result += partial_result
 
+    if not reset:
+        return result
     #reset
     r = call('CDRStatsV1.ResetQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
     if r['result'] != 'OK':
@@ -257,5 +260,4 @@ def monitor_remove(monitor):
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
-    result += monitor_reload(monitor)
     return result

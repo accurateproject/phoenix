@@ -28,6 +28,7 @@
       <th>{{=T('Min Sleep')}}</th>
       <th>{{=T('Triggered Action')}}</th>
       <th>{{=T('Status')}}</th>
+      <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
   <tbody>
@@ -42,7 +43,7 @@
       <td>{{=monitor.threshold_value}}</td>
       <td>{{=monitor.min_sleep}}</td>
       <td>{{=monitor.triggered_action}}</td>
-      <td>{{=monitor.status}}</td>
+      <td><span class="label label-{{='success' if monitor.status =='enabled' else 'danger'}}">{{=monitor.status}}</span></td>
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
 	  {{=A(T('edit'), _href=URL('default', 'monitor', args=(monitor.client.id, monitor.id)), _class="btn btn-link")}}

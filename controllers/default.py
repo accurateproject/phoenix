@@ -131,7 +131,7 @@ def rates():
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def monitor():
     client_id = request.args(0) or redirect('index')
-    client = db.client[client_id] or redirect(URL('default', 'index'))
+    client = db.client[client_id] or redirect('index')
     monitor_id = request.args(1)
     if monitor_id is not None:
         monitor = db.monitor[monitor_id]

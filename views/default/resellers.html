@@ -12,12 +12,12 @@
     <tr>
       <th>{{=T('Name')}}</th>
       <th>{{=T('Currency')}}</th>
-      <th>{{=T('Status')}}</th>
       <th>{{=T('Gateways')}}</th>
       <th>{{=T('Tax ID')}}</th>
       <th>{{=T('Reg ID')}}</th>
       <th>{{=T('Address')}}</th>
       <th>{{=T('Email')}}</th>
+      <th>{{=T('Status')}}</th>
       <th>{{=T('Actions')}}</th>
     </tr>
   </thead>
@@ -26,12 +26,12 @@
     <tr>
       <td>{{=reseller.name}}</td>
       <td>{{=reseller.currency}}</td>
-      <td>{{=reseller.status}}</td>
       <td>{{=', '.join(reseller.gateways)}}</td>
       <td>{{=reseller.tax_id}}</td>
       <td>{{=reseller.reg_id}}</td>
       <td>{{=reseller.address}}</td>
       <td>{{=reseller.email}}</td>
+      <td><span class="label label-{{='success' if reseller.status =='enabled' else 'danger'}}">{{=reseller.status}}</span></td>
       <td>
         <div class="btn-group"  role="group" aria-label="actions">
           {{=A(T('edit'), _href=URL('default', 'resellers', args=reseller.id), _class="btn btn-link")}}
