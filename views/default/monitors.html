@@ -47,6 +47,7 @@
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
 	  {{=A(T('edit'), _href=URL('default', 'monitor', args=(monitor.client.id, monitor.id)), _class="btn btn-link")}}
+	  {{=A(T('delete'), _href=URL('default', 'delete_monitor', args=(monitor.client.id, monitor.id)), _class="btn btn-danger")}}
 	</div>
       </td>
     </tr>

@@ -16,6 +16,16 @@ def resellers():
     resellers = db(query).select()
     return dict(form=form, resellers=resellers)
 
+@auth.requires_membership('admin')
+def delete_reseller():
+    reseller_id = request.args(0) or redirect('index')
+    form = FORM.confirm('Are you sure?',{'Back':URL('resellers')})
+    if form.accepted:
+        crud.delete(db.reseller, reseller_id, next=URL('default', 'resellers'), message=T('reseller deleted succesfully'))
+    response.view = 'default/confirm.html'
+    return dict(form=form, entity='reseller')
+
+
 @auth.requires(auth.has_membership('admin') or auth.has_membership('reseller'))
 def clients():
     reseller_id = request.args(0) or redirect('index')
@@ -42,6 +52,16 @@ def my_clients():
     response.view = 'default/clients.html'
     return dict(form=form, show_form=show_form, clients=clients)
 
+@auth.requires(auth.has_membership('admin') or auth.has_membership('client'))
+def delete_client():
+    reseller_id = request.args(0) or redirect('index')
+    client_id = request.args(1) or redirect('index')
+    next = URL('default', 'clients', args=reseller_id) if auth.has_membership('admin') else URL('default', 'my_clients')
+    form = FORM.confirm('Are you sure?',{'Back':next})
+    if form.accepted:
+        crud.delete(db.client, client_id, next=next, message=T('client deleted succesfully'))
+    response.view = 'default/confirm.html'
+    return dict(form=form, entity='client')
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def rate_sheets():
@@ -129,7 +149,7 @@ def rates():
     return dict(form=form, rate_sheet=rate_sheet, rates=rates)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
-def monitor():
+def monitors():
     client_id = request.args(0) or redirect('index')
     client = db.client[client_id] or redirect('index')
     monitor_id = request.args(1)
@@ -140,6 +160,16 @@ def monitor():
     form = crud.update(db.monitor, request.args(1), next=URL('default', 'monitor', args=client.id))
     monitors = db(db.monitor.client == client.id).select()
     return dict(form=form, client=client, monitors=monitors)
+
+@auth.requires(auth.has_membership('admin') or auth.has_membership('client'))
+def delete_monitor():
+    client_id = request.args(0) or redirect('index')
+    monitor_id = request.args(1) or redirect('index')
+    form = FORM.confirm('Are you sure?',{'Back': URL('default', 'monitors', args=client_id)})
+    if form.accepted:
+        crud.delete(db.monitor, monitor_id, next=URL('default', 'monitors', args=client_id), message=T('monitor deleted succesfully'))
+    response.view = 'default/confirm.html'
+    return dict(form=form, entity='monitor')
 
 def user():
     """
