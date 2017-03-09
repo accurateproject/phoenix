@@ -11,7 +11,7 @@
   {{if auth.has_membership('admin'):}}
   {{=A(T('back to clients'), _href=URL('default', 'clients', args=client.id), _class="btn btn-default")}}
   {{else:}}
-  {{=A(T('back to clients'), _href=URL('default', 'my_clients', args=client.id), _class="btn btn-default")}}
+  {{=A(T('back to clients'), _href=URL('default', 'my_clients'), _class="btn btn-default")}}
   {{pass}}
 </div>
 
@@ -46,7 +46,7 @@
       <td><span class="label label-{{='success' if monitor.status =='enabled' else 'danger'}}">{{=monitor.status}}</span></td>
       <td>
 	<div class="btn-group"  role="group" aria-label="actions">
-	  {{=A(T('edit'), _href=URL('default', 'monitor', args=(monitor.client.id, monitor.id)), _class="btn btn-link")}}
+	  {{=A(T('edit'), _href=URL('default', 'monitors', args=(monitor.client.id, monitor.id)), _class="btn btn-link")}}
 	  {{=A(T('delete'), _href=URL('default', 'delete_monitor', args=(monitor.client.id, monitor.id)), _class="btn btn-danger")}}
 	</div>
       </td>

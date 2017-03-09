@@ -157,7 +157,7 @@ def monitors():
         monitor = db.monitor[monitor_id]
         __check_monitor(monitor)
     db.monitor.client.default = client.id
-    form = crud.update(db.monitor, request.args(1), next=URL('default', 'monitor', args=client.id))
+    form = crud.update(db.monitor, request.args(1), next=URL('default', 'monitors', args=client.id))
     monitors = db(db.monitor.client == client.id).select()
     return dict(form=form, client=client, monitors=monitors)
 

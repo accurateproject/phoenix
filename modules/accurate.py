@@ -15,17 +15,22 @@ def call(method, *args):
         r = requests.post(myconf.get('accurate.server'),
             json = {'id':random.randint(1, sys.maxint), 'method': method, 'params':args})
     except requests.exceptions.ConnectionError as e:
-        return e
+        return dict(error=str(e))
     try:
         r.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        return e
+        return dict(error=str(e))
     try:
         response = r.json()
     except ValueError as e:
-        return e
+        return dict(error=str(e))
     return response
 
+
+def err(r):
+    if u'error' in r:
+        return r[u'error']
+    return ''
 
 def rate_sheet_to_tp(rs, rs_rates):
     destinations = []
@@ -40,66 +45,43 @@ def rate_sheet_to_tp(rs, rs_rates):
         rates.append({'Tenant':tenant, 'Tag':'R'+rate.code, 'Slots':
                       [{'Rate':rate.rate, 'RateUnit':'60s', 'RateIncrement':str(rate['min_increment']) + 's'}]})
 
-    results = {}
-    results['Destinations'] = []
+
     for dest in destinations:
         r = call('SetTpDestination', dest)
-        results['Destinations'].append(r)
+        if err(r): return err(r)
 
-    results['Rates'] = []
     for rate in rates:
         r = call('SetTpRate', rate)
-        results['Rates'].append(r)
+        if err(r): return err(r)
 
-    results['DestinationRates'] = []
     bindings=[]
     for dest in destinations:
         bindings.append({'DestinationCode':dest['Code'], 'RatesTag':'R'+dest['Code'], 'RoundingMethod':'*middle', 'RoundingDecimals':6})
     r = call('SetTpDestinationRate', {'Tenant':tenant, 'Tag':'DR_STANDARD'+rs_id, 'Bindings':bindings})
-    results['DestinationRates'].append(r)
+    if err(r): return err(r)
 
-    results['RatingPlans'] = []
     r = call('SetTpRatingPlan', {'Tenant':tenant, 'Tag':'RP_STANDARD'+rs_id, 'Bindings':
-                                 [{'DestinationRatesTag':'DR_STANDARD'+rs_id, 'TimingTag':'*any', 'Weight':10}]})
-    results['RatingPlans'].append(r)
+                                 [{'DestinationRatesTag':'1DR_STANDARD'+rs_id, 'TimingTag':'*any', 'Weight':10}]})
+    if err(r): return err(r)
 
-    results['RatingProfiles'] = []
     direction = '*out' #if rs.direction == 'outbound' else '*in'
     category = 'call_out' if rs.direction == 'outbound' else 'call_in'
     r = call('SetTpRatingProfile', {'Tenant':tenant, 'Direction':direction, 'Category':category, 'Subject':client_name, 'Activations':
                                     [{'ActivationTime':'2012-01-01T00:00:00Z', "RatingPlanTag":"RP_STANDARD"+rs_id}]})
-    results['RatingProfiles'].append(r)
+    if err(r): return err(r)
 
-    response = ''
-    for key, result_list in  results.iteritems():
-        response += key + '<br>'
-        r = ''
-        for result in result_list:
-            if result['result'] != 'OK':
-                r += 'result: %s error: %s <br>' % (result['result'], result['error'])
-        if len(r) == 0:
-            r = 'OK<br>'
-        response += r
     r = call('ReloadCache', {"Tenant":tenant})
-    response += 'Cache reload<br>'
-    if r['result'] != 'OK':
-        response = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        response += 'OK<br>'
-    return response
+    if err(r): return err(r)
+    return 'rate sheet activated successfully'
 
 def account_update(client):
     tenant = client.unique_code  # rs.client.reseller.unique_code
     client_name = client.unique_code
     r = call('SimpleAccountSet', {"Tenant":tenant, "Account":client_name, "Disabled":client.status == 'disabled'})
-    result = 'Account activation<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
+    if err(r): return err(r)
 
     if client.status == 'disabled':
-        return result
+        return 'account update successfully'
 
     query = '{'
     if client.nb_prefix:
@@ -108,11 +90,7 @@ def account_update(client):
              % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
     query += '}'
     r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name+"_out", "Weight":20, "Query":query})
-    result += 'User outbound activation<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
+    if err(r): return err(r)
     query = '{'
     if client.nb_prefix:
         query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']}," % dict(prefix=client.nb_prefix)
@@ -120,35 +98,25 @@ def account_update(client):
              % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
     query += '}'
     r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name+"_in", "Weight":10, "Query":query})
-    result += 'User inbound activation<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
+    if err(r): return err(r)
 
-    r = call('UsersV1.ReloadUsers', {"Tenant":tenant})
-    result += 'User reload<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
-    return result
-
+    result = users_reload(tenant)
+    return result or 'account updated successfully'
 
 def account_remove(client):
     tenant = client.unique_code  # rs.client.reseller.unique_code
     client_name = client.unique_code
 
     r = call('RemoveTpAllTenant', {'Tenant':tenant})
-    result = 'Account removal<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
+    if err(r): return err(r)
     # reload users
-    # reload cdrstats
+    users_reload()
+    # reload monitors
+    monitors_reload()
     # reload accounts
-    return result
+    accounts_reload()
+
+    return 'account removed successfully'
 
 
 def monitor_update(monitor):
@@ -158,19 +126,14 @@ def monitor_update(monitor):
     action_name = "act_"+monitor_name
     trigger_name = "tr_"+monitor_name
 
-    result = 'Monitor activation<br>'
-    partial_result = 'OK<br>'
+
     if monitor.triggered_action == "notify":
         r = call('SetTpActionGroup', {'Tenant':tenant, 'Tag':action_name, 'Actions':[
             {'Action': '*log'},
             {'Action': '*call_url_async', 'Params':'url'}
         ]})
+        if err(r): return err(r)
 
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
-
-    partial_result = 'OK<br>'
     min_sleep = monitor.min_sleep.strip()
     r = call('SetTpActionTrigger', {'Tenant': tenant, 'Tag': trigger_name, 'Triggers': [
        {
@@ -183,14 +146,12 @@ def monitor_update(monitor):
             'Weight': 10,
         }
     ]})
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
+    if err(r): return err(r)
+
 
     filter = "{'RunID':'*default'}"
     if monitor.monitor_filter:
         filter = monitor.monitor_filter
-    partial_result = 'OK<br>'
     r = call('SetTpCdrStats', {
         'Tenant': tenant,
         'Tag': monitor_name,
@@ -202,35 +163,10 @@ def monitor_update(monitor):
         'ActionTriggerTags': [trigger_name],
         'Disabled': monitor.status == 'disabled',
     })
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
+    if err(r): return err(r)
 
-    result += monitor_reload(monitor, False)
-    return result
-
-def monitor_reload(monitor, reset=True):
-    tenant = monitor.client.unique_code
-    monitor_name = monitor.unique_code
-
-    result = 'Stats realod<br>'
-    partial_result = 'OK<br>'
-    # reload
-    r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
-
-    if not reset:
-        return result
-    #reset
-    r = call('CDRStatsV1.ResetQueues', {'Tenant':tenant, 'IDs':[monitor_name]})
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-
-    result += partial_result
-    return result
-
+    result = monitors_reload(monitor.client.unique_code, monitor.unique_code)
+    return result or 'monitor updated successfully'
 
 def monitor_remove(monitor):
     tenant = monitor.client.unique_code
@@ -241,20 +177,34 @@ def monitor_remove(monitor):
 
     # remove cdrstats
     r = call('CDRStatsV1.RemoveQueue', {'Tenant':tenant, 'IDs':[monitor_name]})
-    result = 'Monitor removal<br>'
-    partial_result = 'OK<br>'
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
+    if err(r): return err(r)
+
     # remove action trigger
     r = call('RemoveActionTriggers', {'Tenant':tenant, 'GroupIDs':[trigger_name]})
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
+    if err(r): return err(r)
     # remove action
     r = call('RemoveActionGroups', {'Tenant':tenant, 'GroupIDs':[action_name]})
-    if r['result'] != 'OK':
-        partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    result += partial_result
+    if err(r): return err(r)
 
-    return result
+    result = monitors_reload()
+    return 'monitor removed successfully'
+
+
+def users_reload(tenant=None):
+    r = call('UsersV1.ReloadUsers', {"Tenant":tenant})
+    if err(r): return err(r)
+
+def accounts_reload(tenant=None):
+    r = call('SimpleAccountsReload', {"Tenant":tenant})
+    if err(r): return err(r)
+
+def monitors_reload(tenant=None, name=None, reset=False):
+    # reload
+    r = call('CDRStatsV1.ReloadQueues', {'Tenant':tenant, 'IDs':[name]})
+    if err(r): return err(r)
+
+    if not reset: return 'monitor reloaded successfully'
+    #reset
+    r = call('CDRStatsV1.ResetQueues', {'Tenant':tenant, 'IDs':[name]})
+    if err(r): return err(r)
+    return 'monitor reloaded successfully'
