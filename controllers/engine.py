@@ -33,9 +33,8 @@ def accounts():
     client = db.client(request.args(0))
     if not accessible_client(client.id):
         redirect(URL('user', 'not_autorized'))
-    r = accurate.call("ApiV1.GetAccounts", dict(Tenant = client.unique_code, IDs = [client.unique_code+'_out', client.unique_code+'_in']))
-    x = r['error'] if r['error'] else r['result']
-    return XML(response.json(x))
+    r = accurate.call("ApiV1.SimpleAccountGet", dict(Tenant = client.unique_code, Account = client.unique_code))
+    return r['error'] if r['error'] else r['result']
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def cdrs():
@@ -125,7 +124,7 @@ def cdrs():
 
     params['runids'] = ['*default']
     params['tenants'] = [client.unique_code]
-    params['accounts'] = [client.unique_code+"_out", client.unique_code+"_in"]
+    params['accounts'] = [client.unique_code]
     params['subjects'] = [client.unique_code]
 
     cdrs = []

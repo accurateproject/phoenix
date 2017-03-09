@@ -89,6 +89,7 @@
        type: "GET",
        dataType: "json",
        success: function(queue) {
+
 	 {{for monitor in monitors:}}
 	 {{for metric in monitor.metrics:}}
 	 $('#{{="%s_%s" %(monitor.unique_code, metric)}}').text(format_metric('{{=metric}}', queue['{{=monitor.unique_code}}']['{{=metric}}']));
@@ -100,18 +101,18 @@
        url: "http://localhost:8000/engine/accounts.json/{{=client.id}}",
        type: "GET",
        dataType: "json",
-       success: function(accounts) {
-	 if((accounts[0].Name.substr(-3) === '_in') && (Object.keys(accounts[0].BalanceMap).length !== 0)){
-	   $('#account_in_wrapper').show();
-	   $('#account_in').text(accounts[0].BalanceMap['*monetary'][0].Value);
-	 }else{
-	   $('#account_in_wrapper').hide();
-	 }
-	 if((accounts[1].Name.substr(-4) === '_out') && (Object.keys(accounts[1].BalanceMap).length !== 0)){
+       success: function(account) {
+	 if(account.BalanceMap.call_out !== undefined){
 	   $('#account_out_wrapper').show();
-	   $('#account_out').text(accounts[1].BalanceMap['*monetary'][0].Value);
+	   $('#account_out').text(account.BalanceMap.call_out);
 	 }else{
 	   $('#account_out_wrapper').hide();
+	 }
+	 if(account.BalanceMap.call_in !== undefined){
+	   $('#account_in_wrapper').show();
+	   $('#account_in').text(account.BalanceMap.call_in);
+	 }else{
+	   $('#account_in_wrapper').hide();
 	 }
        }
      });

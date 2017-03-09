@@ -91,14 +91,8 @@ def rate_sheet_to_tp(rs, rs_rates):
 def account_update(client):
     tenant = client.unique_code  # rs.client.reseller.unique_code
     client_name = client.unique_code
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_out", "AllowNegative":True, "Disabled":client.status == 'disabled'})
-    result = 'Account outbound activation<br>'
-    if r['result'] != 'OK':
-        result = 'result: %s error: %s <br>' % (r['result'], r['error'])
-    else:
-        result += 'OK<br>'
-    r = call('SetAccount', {"Tenant":tenant, "Account":client_name+"_in", "AllowNegative":True, "Disabled":client.status == 'disabled'})
-    result = 'Account inbound activation<br>'
+    r = call('SimpleAccountSet', {"Tenant":tenant, "Account":client_name, "Disabled":client.status == 'disabled'})
+    result = 'Account activation<br>'
     if r['result'] != 'OK':
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
@@ -110,7 +104,7 @@ def account_update(client):
     query = '{'
     if client.nb_prefix:
         query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']}," % dict(prefix=client.nb_prefix)
-    query += ''' 'sip_from_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s_out'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Category':{'$usr':'call_out'}, 'Subject':{'$usr':'%(client)s'}'''\
+    query += ''' 'sip_from_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Category':{'$usr':'call_out'}, 'Subject':{'$usr':'%(client)s'}'''\
              % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
     query += '}'
     r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name+"_out", "Weight":20, "Query":query})
@@ -122,7 +116,7 @@ def account_update(client):
     query = '{'
     if client.nb_prefix:
         query += "'Destination':{'$crepl':['^%(prefix)s(\\\\d+)','${1}']}," % dict(prefix=client.nb_prefix)
-    query += ''' 'sip_to_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s_in'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Category':{'$usr':'call_in'}, 'Subject':{'$usr':'%(client)s'}'''\
+    query += ''' 'sip_to_host':{'$in':%(gateways)s}, 'Account':{'$usr':'%(client)s'}, 'Tenant':{'$usr':'%(tenant)s'}, 'Category':{'$usr':'call_in'}, 'Subject':{'$usr':'%(client)s'}'''\
              % dict(gateways=client.reseller.gateways, client=client_name, tenant=tenant)
     query += '}'
     r = call('UsersV1.UpdateUser', {"Tenant":tenant, "Name":client_name+"_in", "Weight":10, "Query":query})
@@ -151,6 +145,9 @@ def account_remove(client):
         result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     else:
         result += 'OK<br>'
+    # reload users
+    # reload cdrstats
+    # reload accounts
     return result
 
 
@@ -209,7 +206,7 @@ def monitor_update(monitor):
         partial_result = 'result: %s error: %s <br>' % (r['result'], r['error'])
     result += partial_result
 
-    result += monitor_reload(monitor)
+    result += monitor_reload(monitor, False)
     return result
 
 def monitor_reload(monitor, reset=True):
