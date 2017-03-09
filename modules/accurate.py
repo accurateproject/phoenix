@@ -61,7 +61,7 @@ def rate_sheet_to_tp(rs, rs_rates):
     if err(r): return err(r)
 
     r = call('SetTpRatingPlan', {'Tenant':tenant, 'Tag':'RP_STANDARD'+rs_id, 'Bindings':
-                                 [{'DestinationRatesTag':'1DR_STANDARD'+rs_id, 'TimingTag':'*any', 'Weight':10}]})
+                                 [{'DestinationRatesTag':'DR_STANDARD'+rs_id, 'TimingTag':'*any', 'Weight':10}]})
     if err(r): return err(r)
 
     direction = '*out' #if rs.direction == 'outbound' else '*in'
