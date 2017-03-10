@@ -2,17 +2,8 @@ import accurate
 import json
 from collections import OrderedDict
 
-def status():
-    session.forget(response)
-    return raccurate.call("Responder.Status")
-
-def accounts():
-    session.forget(response)
-    return accurate.call("GetAccounts",  dict(tenant = 'R1'))
-
-def queueids():
-    session.forget(response)
-    return accurate.call("CDRStatsV1.GetQueueIds")
+def __err_or_res(r):
+    return r['error'] if r['error'] else r['result']
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def metrics():
@@ -24,7 +15,7 @@ def metrics():
     metrics = {}
     for mon in monitors:
         r = accurate.call("CDRStatsV1.GetMetrics", dict(Tenant = client.unique_code, ID = mon.unique_code))
-        metrics[mon.unique_code] = r['error'] if r['error'] else r['result']
+        metrics[mon.unique_code] = __err_or_res(r)
     return metrics
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
@@ -34,7 +25,7 @@ def accounts():
     if not accessible_client(client.id):
         redirect(URL('user', 'not_autorized'))
     r = accurate.call("ApiV1.SimpleAccountGet", dict(Tenant = client.unique_code, Account = client.unique_code))
-    return r['error'] if r['error'] else r['result']
+    return __err_or_res(r)
 
 @auth.requires(auth.has_membership(group_id='admin') or auth.has_membership('client'))
 def cdrs():

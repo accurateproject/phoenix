@@ -1,0 +1,79 @@
+{{extend 'layout.html'}}
+
+{{block header}}
+<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.bundle.min.js"></script>
+{{end}}
+
+<div class="col-md-2">
+  <canvas id="mem_chart" width="400" height="400"></canvas>
+</div>
+
+{{block page_js}}
+<script type="text/javascript">
+ $(function() {
+   var ctx = document.getElementById("mem_chart");
+   var data = {
+     datasets: [
+       {
+	 label: 'Heap',
+	 backgroundColor: 'rgba(255, 99, 132, 0.2)',
+	 data: [],
+       },
+       {
+	 label: "Footprint",
+	 backgroundColor: 'rgba(54, 162, 235, 0.2)',
+	 data: [],
+       }
+     ]
+   };
+   var memChart = new Chart(ctx, {
+     type: 'line',
+     data: data,
+     options: {
+       title: {
+	 display: true,
+	 text: 'Memory Status'
+       },
+       scales: {
+	 xAxes: [{
+           type: "time",
+           display: true,
+           scaleLabel: {
+             display: true,
+             labelString: 'Time'
+           }
+	 }],
+	 yAxes: [{
+           display: true,
+           scaleLabel: {
+             display: true,
+             labelString: 'Memory'
+           }
+	 }]
+       }
+     }
+   }, {});
+   setInterval(function(){
+     // Add two random numbers for each dataset
+     $.ajax({
+       url: "http://localhost:8000/dashboard/status.json",
+       type: "GET",
+       dataType: "json",
+       success: function(status) {
+	 console.log();
+	 data.datasets[0].data.push({x: moment(), y: status.result.memstat/1024/1024});
+	 data.datasets[1].data.push({x: moment(), y: status.result.footprint/1024/1024});
+	 if (data.datasets[0].data.length > 100){
+	   data.datasets[0].data.shift();
+	 }
+	 if (data.datasets[1].data.length > 100){
+	   data.datasets[1].data.shift();
+	 }
+	 memChart.update();
+       }
+     });
+   }, 1000);
+ });
+</script>
+{{end}}
