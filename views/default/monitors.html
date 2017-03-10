@@ -85,7 +85,7 @@
    var updateInterval = 3500;
    function getData() {
      $.ajax({
-       url: "http://localhost:8000/engine/metrics.json/{{=client.id}}",
+       url: window.location.origin + "/engine/metrics.json/{{=client.id}}",
        type: "GET",
        dataType: "json",
        success: function(queue) {
@@ -98,7 +98,7 @@
        }
      });
      $.ajax({
-       url: "http://localhost:8000/engine/accounts.json/{{=client.id}}",
+       url: window.location.origin + "/engine/accounts.json/{{=client.id}}",
        type: "GET",
        dataType: "json",
        success: function(account) {

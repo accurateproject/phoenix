@@ -57,7 +57,7 @@
    setInterval(function(){
      // Add two random numbers for each dataset
      $.ajax({
-       url: "http://localhost:8000/dashboard/status.json",
+       url: window.location.origin + "/dashboard/status.json",
        type: "GET",
        dataType: "json",
        success: function(status) {
